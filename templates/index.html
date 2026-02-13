@@ -682,6 +682,8 @@
         }
 
         let pollInterval = null;
+        let countdownInterval = null;
+        let currentEstimatedTime = 0;
 
         function showQueueStatus(clientId, username) {
             // Show initial queue modal
@@ -736,9 +738,11 @@
                     // Check if completed or error
                     if (data.status === 'completed') {
                         clearInterval(pollInterval);
+                        clearInterval(countdownInterval);
                         showCompletedStatus(data);
                     } else if (data.status === 'error') {
                         clearInterval(pollInterval);
+                        clearInterval(countdownInterval);
                         showErrorStatus(data);
                     } else {
                         // Continue polling
@@ -746,6 +750,7 @@
                     }
                 } else {
                     clearInterval(pollInterval);
+                    clearInterval(countdownInterval);
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
@@ -757,6 +762,7 @@
             } catch (error) {
                 console.error('Polling error:', error);
                 clearInterval(pollInterval);
+                clearInterval(countdownInterval);
                 // Retry after 2 seconds
                 pollInterval = setTimeout(() => pollQueueStatus(clientId, username), 2000);
             }
@@ -792,14 +798,33 @@
                 // Update total
                 totalEl.textContent = data.total_queue;
 
-                // Update time
-                if (data.estimated_time === 0) {
+                // Update time and start countdown
+                currentEstimatedTime = data.estimated_time;
+                updateTimeDisplay();
+
+                // Clear existing countdown and start new one
+                clearInterval(countdownInterval);
+                if (currentEstimatedTime > 0) {
+                    countdownInterval = setInterval(() => {
+                        if (currentEstimatedTime > 0) {
+                            currentEstimatedTime--;
+                            updateTimeDisplay();
+                        }
+                    }, 1000);
+                }
+            }
+        }
+
+        function updateTimeDisplay() {
+            const timeEl = document.getElementById('queueTime');
+            if (timeEl) {
+                if (currentEstimatedTime === 0) {
                     timeEl.textContent = 'Soon';
-                } else if (data.estimated_time < 60) {
-                    timeEl.textContent = `${data.estimated_time}s`;
+                } else if (currentEstimatedTime < 60) {
+                    timeEl.textContent = `${currentEstimatedTime}s`;
                 } else {
-                    const minutes = Math.floor(data.estimated_time / 60);
-                    const seconds = data.estimated_time % 60;
+                    const minutes = Math.floor(currentEstimatedTime / 60);
+                    const seconds = currentEstimatedTime % 60;
                     timeEl.textContent = `${minutes}m ${seconds}s`;
                 }
             }

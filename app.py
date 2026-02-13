@@ -8,8 +8,12 @@ import queue
 import threading
 import uuid
 from datetime import datetime
+import dotenv
+import os
 
 app = Flask(__name__)
+
+dotenv.load_dotenv()
 
 # Initialize API and Auth
 subscription_ids = [
@@ -18,9 +22,9 @@ subscription_ids = [
     "locket_199_1m_only",
     "locket_3600_1y",
     "locket_399_1m_only",
-    "",
 ]
-auth = Auth("locket@maihuybao.dev", "Mhbao@26062007")
+
+auth = Auth(os.getenv("EMAIL"), os.getenv("PASSWORD"))
 try:
     token = auth.get_token()
     api = LocketAPI(token)
@@ -320,12 +324,10 @@ def get_user_info():
 
 
 def send_telegram_notification(username, uid, product_id, raw_json):
-    bot_token = (
-        "8529598333:AAGl46FejTf7rU9_yCBgOh3ZWAPgeVmrGkA"  # Replace with your bot token
-    )
-    chat_id = "5267646360"  # Replace with your chat ID
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
 
-    if bot_token == "YOUR_BOT_TOKEN" or chat_id == "YOUR_CHAT_ID":
+    if bot_token == "" or chat_id == "":
         print("Telegram notification skipped: Token or Chat ID not set.")
         return
     subscription_info = json.dumps(
