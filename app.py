@@ -43,7 +43,83 @@ class QueueManager:
         self.current_processing = None
         self.worker_thread = threading.Thread(target=self._process_queue, daemon=True)
         self.worker_thread.start()
+
+        # Load state from file
+        self._load_state()
         print("Queue manager initialized and worker thread started")
+
+    def _save_state(self):
+        """Save current queue state to file"""
+        try:
+            state = {"client_requests": {}, "processing_times": self.processing_times}
+
+            with self.lock:
+                for client_id, data in self.client_requests.items():
+                    # Convert datetime objects to ISO strings
+                    req_data = data.copy()
+                    if req_data.get("added_at"):
+                        req_data["added_at"] = req_data["added_at"].isoformat()
+                    if req_data.get("started_at"):
+                        req_data["started_at"] = req_data["started_at"].isoformat()
+                    if req_data.get("completed_at"):
+                        req_data["completed_at"] = req_data["completed_at"].isoformat()
+                    state["client_requests"][client_id] = req_data
+
+            with open("queue_state.json", "w") as f:
+                json.dump(state, f)
+        except Exception as e:
+            print(f"Error saving queue state: {e}")
+
+    def _load_state(self):
+        """Load queue state from file"""
+        if not os.path.exists("queue_state.json"):
+            return
+
+        try:
+            with open("queue_state.json", "r") as f:
+                state = json.load(f)
+
+            if "processing_times" in state:
+                self.processing_times = state["processing_times"]
+
+            if "client_requests" in state:
+                with self.lock:
+                    loaded_requests = []
+                    for client_id, data in state["client_requests"].items():
+                        # Convert ISO strings back to datetime
+                        if data.get("added_at"):
+                            data["added_at"] = datetime.fromisoformat(data["added_at"])
+                        if data.get("started_at"):
+                            data["started_at"] = datetime.fromisoformat(
+                                data["started_at"]
+                            )
+                        if data.get("completed_at"):
+                            data["completed_at"] = datetime.fromisoformat(
+                                data["completed_at"]
+                            )
+
+                        self.client_requests[client_id] = data
+                        loaded_requests.append((client_id, data))
+
+                    # Sort by added_at to ensure FIFO order
+                    loaded_requests.sort(key=lambda x: x[1]["added_at"])
+
+                    for client_id, data in loaded_requests:
+                        # Re-queue waiting or interrupted processing requests
+                        if data["status"] == "waiting":
+                            self.queue.put(client_id)
+                        elif data["status"] == "processing":
+                            # Reset status to waiting if it was interrupted
+                            data["status"] = "waiting"
+                            data["started_at"] = None
+                            self.client_requests[client_id] = (
+                                data  # Update modified data
+                            )
+                            self.queue.put(client_id)
+
+            print(f"Loaded {len(self.client_requests)} requests from state file")
+        except Exception as e:
+            print(f"Error loading queue state: {e}")
 
     def add_to_queue(self, username):
         """Add a request to the queue and return client_id"""
@@ -63,6 +139,7 @@ class QueueManager:
 
         self.queue.put(client_id)
         print(f"Added {username} to queue with client_id: {client_id}")
+        self._save_state()
         return client_id
 
     def get_status(self, client_id):
@@ -140,6 +217,9 @@ class QueueManager:
                     self.client_requests[client_id]["status"] = "processing"
                     self.client_requests[client_id]["started_at"] = datetime.now()
 
+                # Save state when processing starts
+                self._save_state()
+
                 print(f"Processing request for client_id: {client_id}")
 
                 # Process the request
@@ -160,6 +240,9 @@ class QueueManager:
                         # Keep only last 20 times
                         if len(self.processing_times) > 20:
                             self.processing_times.pop(0)
+
+                # Save state when processing completes
+                self._save_state()
 
                 self.queue.task_done()
 

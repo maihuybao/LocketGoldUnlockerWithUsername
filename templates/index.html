@@ -689,8 +689,16 @@
         let pollInterval = null;
         let countdownInterval = null;
         let currentEstimatedTime = 0;
+        let lastPosition = null;
 
         function showQueueStatus(clientId, username) {
+            // Reset state
+            lastPosition = null;
+            currentEstimatedTime = 0;
+            if (pollInterval) clearTimeout(pollInterval);
+            if (countdownInterval) clearInterval(countdownInterval);
+            countdownInterval = null;
+
             // Show initial queue modal
             Swal.fire({
                 title: 'Queue Status',
@@ -803,13 +811,15 @@
                 // Update total
                 totalEl.textContent = data.total_queue;
 
-                // Update time and start countdown
-                currentEstimatedTime = data.estimated_time;
-                updateTimeDisplay();
+                // Update time ONLY if position changed to prevent jitter
+                if (lastPosition !== data.position) {
+                    currentEstimatedTime = data.estimated_time;
+                    lastPosition = data.position;
+                    updateTimeDisplay();
+                }
 
-                // Clear existing countdown and start new one
-                clearInterval(countdownInterval);
-                if (currentEstimatedTime > 0) {
+                // Ensure countdown is running
+                if (!countdownInterval) {
                     countdownInterval = setInterval(() => {
                         if (currentEstimatedTime > 0) {
                             currentEstimatedTime--;
