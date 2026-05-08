@@ -5,695 +5,1156 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Locket Gold Unlocker</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- SweetAlert2 CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css" rel="stylesheet">
     <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
         :root {
-            --primary-gradient: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
-            --bg-color: #050505;
-            --card-bg: rgba(20, 20, 20, 0.7);
-            --text-color: #ffffff;
-            --text-secondary: #b0b0b0;
-            --input-bg: rgba(255, 255, 255, 0.03);
-            --border-color: rgba(255, 215, 0, 0.1);
-            --glass-border: 1px solid rgba(255, 215, 0, 0.15);
+            /* Default = Gold theme */
+            --gold: #FFD700;
+            --gold-light: #FFE55C;
+            --gold-dark: #E5A100;
+            --accent: #FFD700;
+            --accent-light: #FFE55C;
+            --accent-dark: #E5A100;
+            --accent-rgb: 255,215,0;
+            --accent-2-rgb: 255,180,0;
+            --accent-3-rgb: 255,230,100;
+            --bg: #050505;
+            --bg-2: #0c0a05;
+            --card: rgba(16, 16, 16, 0.75);
+            --text: #fff;
+            --text-dim: #999;
+            --glass: 1px solid rgba(255,215,0,0.12);
+            --radius: 1.25rem;
+            --reveal: revealUp;
+        }
+
+        /* ── Aurora theme: cyan/purple, electric ── */
+        body.theme-aurora {
+            --accent: #7dd3fc;
+            --accent-light: #a5f3fc;
+            --accent-dark: #0ea5e9;
+            --accent-rgb: 125,211,252;
+            --accent-2-rgb: 167,139,250;
+            --accent-3-rgb: 236,72,153;
+            --gold: var(--accent);
+            --gold-light: var(--accent-light);
+            --gold-dark: var(--accent-dark);
+            --bg: #04060d;
+            --bg-2: #0a0a1a;
+            --glass: 1px solid rgba(125,211,252,0.14);
+            --reveal: revealAurora;
+        }
+
+        /* ── Sunset theme: peach/magenta, warm ── */
+        body.theme-sunset {
+            --accent: #fb923c;
+            --accent-light: #fdba74;
+            --accent-dark: #ea580c;
+            --accent-rgb: 251,146,60;
+            --accent-2-rgb: 244,114,182;
+            --accent-3-rgb: 250,204,21;
+            --gold: var(--accent);
+            --gold-light: var(--accent-light);
+            --gold-dark: var(--accent-dark);
+            --bg: #0a0506;
+            --bg-2: #170a0a;
+            --glass: 1px solid rgba(251,146,60,0.14);
+            --reveal: revealSunset;
+        }
+
+        /* ── Mono theme: cool grayscale, minimalist ── */
+        body.theme-mono {
+            --accent: #e5e7eb;
+            --accent-light: #ffffff;
+            --accent-dark: #9ca3af;
+            --accent-rgb: 229,231,235;
+            --accent-2-rgb: 156,163,175;
+            --accent-3-rgb: 209,213,219;
+            --gold: var(--accent);
+            --gold-light: var(--accent-light);
+            --gold-dark: var(--accent-dark);
+            --bg: #06080a;
+            --bg-2: #0c1014;
+            --glass: 1px solid rgba(255,255,255,0.10);
+            --reveal: revealMono;
         }
 
         body {
             font-family: 'Outfit', sans-serif;
-            background-color: var(--bg-color);
+            background: var(--bg);
             background-image:
-                radial-gradient(at 0% 0%, hsla(50, 100%, 10%, 1) 0, transparent 50%),
-                radial-gradient(at 50% 0%, hsla(45, 100%, 15%, 1) 0, transparent 50%),
-                radial-gradient(at 100% 0%, hsla(50, 100%, 10%, 1) 0, transparent 50%);
-            color: var(--text-color);
+                radial-gradient(ellipse at 50% -10%, rgba(var(--accent-rgb),.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 100% 100%, rgba(var(--accent-2-rgb),.04) 0%, transparent 50%);
+            color: var(--text);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            margin: 0;
             overflow-x: hidden;
         }
 
+        /* ── animated background ── */
+        .bg-glow {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .bg-glow .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: .35;
+            animation: drift 18s ease-in-out infinite alternate;
+        }
+        .bg-glow .orb:nth-child(1) {
+            width: 420px; height: 420px;
+            background: radial-gradient(circle, rgba(var(--accent-rgb),.45), transparent 70%);
+            top: -10%; left: -5%;
+        }
+        .bg-glow .orb:nth-child(2) {
+            width: 350px; height: 350px;
+            background: radial-gradient(circle, rgba(var(--accent-2-rgb),.3), transparent 70%);
+            bottom: -8%; right: -5%;
+            animation-delay: -8s;
+            animation-duration: 22s;
+        }
+        .bg-glow .orb:nth-child(3) {
+            width: 250px; height: 250px;
+            background: radial-gradient(circle, rgba(var(--accent-3-rgb),.22), transparent 70%);
+            top: 40%; left: 55%;
+            animation-delay: -4s;
+            animation-duration: 15s;
+        }
+        @keyframes drift {
+            0%   { transform: translate(0,0) scale(1); }
+            50%  { transform: translate(40px,-30px) scale(1.12); }
+            100% { transform: translate(-20px,20px) scale(.95); }
+        }
+
+        /* ── floating particles ── */
+        .particles {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .particles span {
+            position: absolute;
+            width: 3px; height: 3px;
+            background: var(--gold);
+            border-radius: 50%;
+            opacity: 0;
+            animation: particle-float linear infinite;
+        }
+        @keyframes particle-float {
+            0%   { opacity: 0; transform: translateY(100vh) scale(0); }
+            10%  { opacity: .6; }
+            90%  { opacity: .3; }
+            100% { opacity: 0; transform: translateY(-10vh) scale(1); }
+        }
+
+        /* ── layout ── */
         .main-wrapper {
+            position: relative;
+            z-index: 1;
             width: 100%;
-            max-width: 480px;
-            padding: 20px;
-            box-sizing: border-box;
+            max-width: 520px;
+            padding: 32px 18px 20px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 18px;
+        }
+        @media (min-width: 1024px) {
+            .main-wrapper { max-width: 580px; padding: 40px 20px 24px; gap: 20px; }
         }
 
-        .container {
-            background: var(--card-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            padding: 2.5rem;
-            border-radius: 1.5rem;
-            border: var(--glass-border);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            text-align: center;
+        /* ── card base ── */
+        .card {
+            background: var(--card);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: var(--glass);
+            border-radius: var(--radius);
+            padding: 2rem;
             position: relative;
             overflow: hidden;
+            transition: transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s ease;
         }
-
-        .container::before {
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 60px -15px rgba(255,215,0,.12);
+        }
+        .card::before {
             content: '';
             position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(160deg, rgba(255,215,0,.2), transparent 40%, transparent 60%, rgba(255,215,0,.08));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
             pointer-events: none;
-            z-index: 0;
         }
 
-        .app-icon {
-            width: 76px;
-            height: 76px;
-            border-radius: 18px;
-            display: block;
-            margin: 0 auto 0.75rem;
-            object-fit: cover;
-            overflow: hidden;
-            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+        /* ── heartbeat logo ── */
+        .logo-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: .5rem;
+        }
+        .heart-logo {
+            position: relative;
+            width: 82px;
+            height: 82px;
+        }
+        .heart-logo img {
             position: relative;
             z-index: 1;
+            transition: filter .5s ease;
+            filter: drop-shadow(0 0 18px rgba(var(--accent-rgb),.5));
+            animation: heartbeat 1.4s ease-in-out infinite;
+        }
+        .heart-logo .pulse-ring {
+            position: absolute;
+            inset: -12px;
+            border-radius: 50%;
+            border: 2px solid rgba(var(--accent-rgb),.28);
+            animation: pulse-ring 1.4s ease-out infinite;
+        }
+        .heart-logo .pulse-ring:nth-child(2) {
+            animation-delay: .3s;
         }
 
-        h1 {
-            background: var(--primary-gradient);
+        /* Color-shift the (raster) Locket icon to match each theme.
+           hue-rotate moves yellow → target hue; saturate/brightness keep it
+           punchy. Numbers picked empirically against #FFD700. */
+        body.theme-aurora .heart-logo img {
+            filter:
+                drop-shadow(0 0 22px rgba(var(--accent-rgb),.55))
+                hue-rotate(160deg)
+                saturate(1.15);
+        }
+        body.theme-sunset .heart-logo img {
+            filter:
+                drop-shadow(0 0 22px rgba(var(--accent-rgb),.55))
+                hue-rotate(-25deg)
+                saturate(1.4)
+                brightness(1.05);
+        }
+        body.theme-mono .heart-logo img {
+            filter:
+                drop-shadow(0 0 22px rgba(var(--accent-rgb),.45))
+                grayscale(1)
+                brightness(1.15)
+                contrast(1.05);
+        }
+
+        @keyframes heartbeat {
+            0%   { transform: scale(1); }
+            14%  { transform: scale(1.13); }
+            28%  { transform: scale(1); }
+            42%  { transform: scale(1.08); }
+            56%  { transform: scale(1); }
+            100% { transform: scale(1); }
+        }
+        @keyframes pulse-ring {
+            0%   { transform: scale(.85); opacity: .6; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        /* ── title ── */
+        .hero-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -.5px;
+            background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dark));
+            background-size: 200% 200%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-            font-size: 2rem;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            position: relative;
-            z-index: 1;
+            animation: shimmer-text 4s ease infinite;
+        }
+        @keyframes shimmer-text {
+            0%,100% { background-position: 0% 50%; }
+            50%     { background-position: 100% 50%; }
+        }
+        .hero-sub {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: .92rem;
+            margin-top: .3rem;
+            margin-bottom: 1.6rem;
         }
 
-        p.subtitle {
-            color: var(--text-secondary);
-            margin-bottom: 2rem;
-            font-size: 0.95rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-            text-align: left;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Global Queue Status (Outside Modal) */
-        .global-queue-container {
+        /* ── queue badge ── */
+        .queue-badge {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            background: rgba(255, 215, 0, 0.05);
-            padding: 1rem;
-            border-radius: 1rem;
-            border: 1px solid rgba(255, 215, 0, 0.1);
+            gap: .75rem;
+            margin-bottom: 1.4rem;
+            background: rgba(255,215,0,.04);
+            padding: .85rem 1rem;
+            border-radius: .85rem;
+            border: 1px solid rgba(255,215,0,.08);
         }
-
-        .global-queue-item {
-            text-align: center;
-        }
-
-        .global-queue-label {
-            font-size: 0.7rem;
-            color: var(--text-secondary);
+        .queue-badge-item { text-align: center; }
+        .queue-badge-label {
+            font-size: .65rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 0.25rem;
+            letter-spacing: 1.2px;
+            color: var(--text-dim);
+            margin-bottom: .15rem;
         }
-
-        .global-queue-value {
+        .queue-badge-value {
             font-size: 1.1rem;
             font-weight: 700;
-            color: #FFD700;
+            color: var(--gold);
         }
 
-        label {
+        /* ── input ── */
+        .field label {
             display: block;
-            margin-bottom: 0.75rem;
-            font-size: 0.85rem;
+            font-size: .78rem;
             font-weight: 500;
-            color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 1px;
+            color: var(--text-dim);
+            margin-bottom: .6rem;
         }
-
-        input[type="text"] {
+        .input-wrap {
+            position: relative;
+        }
+        .input-wrap input {
             width: 100%;
-            padding: 1rem;
-            background-color: var(--input-bg);
-            border: var(--glass-border);
-            border-radius: 0.75rem;
-            color: var(--text-color);
+            padding: .95rem 1rem .95rem 2.8rem;
+            background: rgba(255,255,255,.03);
+            border: 1px solid rgba(255,215,0,.12);
+            border-radius: .75rem;
+            color: #fff;
             font-size: 1rem;
-            box-sizing: border-box;
-            transition: all 0.3s ease;
-            font-family: 'Outfit', sans-serif;
+            font-family: inherit;
+            transition: border-color .3s, box-shadow .3s, background .3s;
         }
-
-        input[type="text"]:focus {
+        .input-wrap input::placeholder { color: rgba(255,255,255,.2); }
+        .input-wrap input:focus {
             outline: none;
-            border-color: #FFD700;
-            background-color: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.1);
+            border-color: var(--gold);
+            background: rgba(255,255,255,.06);
+            box-shadow: 0 0 0 3px rgba(255,215,0,.1);
+        }
+        .input-wrap .input-icon {
+            position: absolute;
+            left: .9rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255,215,0,.4);
+            transition: color .3s;
+        }
+        .input-wrap input:focus ~ .input-icon,
+        .input-wrap input:not(:placeholder-shown) ~ .input-icon {
+            color: var(--gold);
         }
 
-        button {
+        /* ── button ── */
+        .btn-primary {
             width: 100%;
+            margin-top: 1.2rem;
             padding: 1rem;
-            background: var(--primary-gradient);
-            color: #000;
             border: none;
-            border-radius: 0.75rem;
+            border-radius: .75rem;
             font-size: 1rem;
             font-weight: 700;
+            font-family: inherit;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            color: #000;
+            background: linear-gradient(135deg, var(--gold-light), var(--gold));
+            background-size: 200% 200%;
+            animation: shimmer-text 4s ease infinite;
             position: relative;
             overflow: hidden;
-            z-index: 1;
+            transition: transform .2s, box-shadow .2s;
         }
-
-        button:hover,
-        .download-btn:hover {
+        .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px -5px rgba(253, 185, 49, 0.4);
+            box-shadow: 0 12px 28px -6px rgba(255,215,0,.4);
         }
-
-        button:active,
-        .download-btn:active {
-            transform: translateY(0);
+        .btn-primary:active { transform: translateY(0); }
+        .btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-primary .loader {
+            display: none;
+            width: 20px; height: 20px;
+            border: 3px solid rgba(0,0,0,.2);
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            margin: 0 auto;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        button:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Instructions Card */
-        .instructions {
-            background: rgba(20, 20, 20, 0.4);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            border: var(--glass-border);
+        /* ── instructions card ── */
+        .instructions-card {
             text-align: left;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
+            font-size: .88rem;
+            color: var(--text-dim);
+            line-height: 1.7;
+        }
+        .instructions-card h3 {
+            color: #fff;
+            font-size: .95rem;
+            margin-bottom: .8rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        /* Platform Tabs */
+        /* tabs */
         .platform-tabs {
             display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
+            gap: .4rem;
+            margin-bottom: 1.2rem;
         }
-
         .platform-tab {
             flex: 1;
-            padding: 0.75rem 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 0.75rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            padding: .6rem .8rem;
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: .65rem;
             text-align: center;
             font-weight: 600;
+            font-size: .88rem;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
+            gap: .4rem;
+            transition: all .3s ease;
+            color: var(--text-dim);
         }
-
-        .platform-tab:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
+        .platform-tab:hover { background: rgba(255,255,255,.08); color: #fff; }
         .platform-tab.active {
-            background: var(--primary-gradient);
+            background: linear-gradient(135deg, var(--gold-light), var(--gold));
             color: #000;
             border-color: transparent;
         }
+        .platform-content { display: none; }
+        .platform-content.active { display: block; }
 
-        .platform-content {
-            display: none;
-        }
-
-        .platform-content.active {
-            display: block;
-        }
+        .instructions-card ol { padding-left: 1.2rem; }
+        .instructions-card li { margin-bottom: .45rem; }
+        .instructions-card strong { color: #ddd; }
 
         .dns-hostname {
-            background: rgba(255, 215, 0, 0.1);
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            padding: 0.75rem;
-            border-radius: 0.5rem;
+            background: rgba(255,215,0,.08);
+            border: 1px solid rgba(255,215,0,.2);
+            padding: .65rem;
+            border-radius: .5rem;
             font-family: 'Courier New', monospace;
-            font-size: 0.95rem;
-            color: #FFD700;
+            font-size: .92rem;
+            color: var(--gold);
             text-align: center;
-            margin: 0.75rem 0;
+            margin: .6rem 0;
             user-select: all;
         }
 
-        .instructions h3 {
-            color: #fff;
-            font-size: 1rem;
-            margin-top: 0;
-            margin-bottom: 1rem;
+        .action-btns {
             display: flex;
+            gap: .6rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .action-btn {
+            display: inline-flex;
             align-items: center;
-            gap: 8px;
-        }
-
-        .instructions ol {
-            padding-left: 1.2rem;
-            margin: 0;
-            line-height: 1.6;
-        }
-
-        .instructions li {
-            margin-bottom: 0.5rem;
-        }
-
-        .youtube-embed {
-            margin-top: 1.25rem;
-            border-radius: 1rem;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(0, 0, 0, 0.2);
-        }
-
-        .youtube-embed iframe {
-            width: 100%;
-            aspect-ratio: 9 / 16;
-            border: 0;
-            display: block;
-        }
-
-        /* Note Card */
-        .note {
-            background: rgba(255, 215, 0, 0.05);
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            text-align: left;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            margin-top: 0px;
-            /* Spacing handled by gap in main-wrapper */
-        }
-
-        .note h3 {
-            color: #FFD700;
-            font-size: 1rem;
-            margin-top: 0;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .note ul {
-            padding-left: 1.2rem;
-            margin: 0;
-            line-height: 1.6;
-        }
-
-        .note li {
-            margin-bottom: 0.5rem;
-        }
-
-        /* Footer */
-        footer {
-            margin-top: auto;
-            padding: 1.5rem;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            text-align: center;
-            width: 100%;
-        }
-
-        footer a {
-            color: #FFD700;
+            gap: 6px;
+            padding: .7rem 1.2rem;
+            border-radius: .7rem;
+            font-weight: 600;
+            font-size: .88rem;
+            font-family: inherit;
             text-decoration: none;
-            transition: opacity 0.2s;
+            cursor: pointer;
+            transition: all .25s ease;
+            border: 1px solid rgba(255,255,255,.12);
+        }
+        .action-btn.dl  { background: rgba(255,255,255,.06); color: #fff; }
+        .action-btn.tut { background: rgba(255,215,0,.08); color: var(--gold); border-color: rgba(255,215,0,.18); }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -6px rgba(255,215,0,.25); }
+
+        .profile-update {
+            display: flex; align-items: center; gap: .55rem;
+            margin: .9rem 0 0;
+            padding: .55rem .8rem;
+            background: rgba(74,222,128,.06);
+            border: 1px solid rgba(74,222,128,.18);
+            border-radius: .8rem;
+            color: #cfe9d6;
+            font-size: .82rem;
+        }
+        .profile-update .profile-update-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 0 0 rgba(74,222,128,.55);
+            animation: livePulse 2.4s infinite;
+            flex-shrink: 0;
+        }
+        .profile-update .profile-update-text { flex: 1; text-align: left; }
+        .profile-update strong { color: #fff; font-weight: 600; margin-left: 4px; }
+        .profile-update-toggle {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: rgba(255,255,255,.06);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: .6rem;
+            padding: .25rem .55rem;
+            font-size: .75rem;
+            cursor: pointer;
+            transition: background .2s, border-color .2s;
+        }
+        .profile-update-toggle:hover {
+            background: rgba(255,215,0,.1);
+            border-color: rgba(255,215,0,.25);
+        }
+        .profile-update-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+        .profile-update-toggle svg { transition: transform .2s; }
+
+        .profile-history {
+            margin-top: .6rem;
+            display: flex; flex-direction: column; gap: .4rem;
+            max-height: 220px; overflow-y: auto;
+        }
+        .profile-history-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: .6rem;
+            padding: .45rem .65rem;
+            background: rgba(255,255,255,.03);
+            border: 1px solid rgba(255,255,255,.05);
+            border-radius: .6rem;
+            font-size: .78rem;
+            color: var(--text-dim);
+        }
+        .profile-history-row .ph-badge {
+            font-size: .65rem; font-weight: 700;
+            padding: 2px 7px; border-radius: 999px;
+            text-transform: uppercase; letter-spacing: .05em;
+        }
+        .profile-history-row.upload .ph-badge { background: rgba(74,222,128,.14); color: #4ade80; }
+        .profile-history-row.delete .ph-badge { background: rgba(255,107,107,.14); color: #ff6b6b; }
+        .profile-history-row .ph-time { color: #fff; font-weight: 500; }
+        .profile-history-row .ph-meta { font-family: ui-monospace, monospace; font-size: .72rem; }
+        .profile-history-empty {
+            text-align: center;
+            padding: .8rem 0;
+            color: var(--text-dim);
+            font-size: .8rem;
         }
 
-        footer a:hover {
-            opacity: 0.8;
+        /* ── note card ── */
+        .note-card {
+            text-align: left;
+            font-size: .88rem;
+            color: var(--text-dim);
+            background: rgba(255,215,0,.03);
+            border-color: rgba(255,215,0,.12);
         }
+        .note-card h3 {
+            color: var(--gold);
+            font-size: .95rem;
+            margin-bottom: .5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .note-card ul { padding-left: 1.2rem; line-height: 1.7; }
+        .note-card li { margin-bottom: .4rem; }
+        .note-card strong { color: #ddd; }
 
-        /* Loader */
-        .loader {
-            display: none;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(0, 0, 0, 0.3);
+        .recent-card { padding: 1.4rem 1.2rem; }
+        .recent-card h3 {
+            font-size: .95rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            color: var(--gold-light);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        .recent-card h3 .recent-pulse {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: #4ade80; margin-left: auto;
+            box-shadow: 0 0 0 0 rgba(74,222,128,.6);
+            animation: livePulse 2s ease-out infinite;
+        }
+        @keyframes livePulse {
+            0% { box-shadow: 0 0 0 0 rgba(74,222,128,.5); }
+            70% { box-shadow: 0 0 0 8px rgba(74,222,128,0); }
+            100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+        }
+        .recent-list { display: flex; flex-direction: column; gap: .5rem; }
+        .recent-empty { color: var(--text-dim); font-size: .85rem; text-align: center; padding: 1.5rem 0; }
+        .recent-item {
+            display: grid;
+            grid-template-columns: 36px 1fr auto;
+            gap: .8rem;
+            align-items: center;
+            background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.015));
+            border: 1px solid rgba(255,255,255,.06);
+            border-radius: .8rem;
+            padding: .65rem .85rem;
+            transition: border-color .25s, transform .2s;
+        }
+        .recent-item:hover {
+            border-color: rgba(255,215,0,.18);
+            transform: translateX(2px);
+        }
+        .recent-item.completed { border-left: 2px solid #4ade80; }
+        .recent-item.error { border-left: 2px solid #ff6b6b; }
+
+        .recent-avatar {
+            width: 32px; height: 32px;
             border-radius: 50%;
-            border-top-color: #000;
-            animation: spin 1s ease-in-out infinite;
-            margin: 0 auto;
+            display: flex; align-items: center; justify-content: center;
+            font-size: .85rem; font-weight: 600;
+            text-transform: uppercase;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, rgba(255,215,0,.18), rgba(255,215,0,.05));
+            border: 1px solid rgba(255,215,0,.18);
+            color: var(--gold-light);
+            position: relative;
+        }
+        .recent-avatar::after {
+            content: '';
+            position: absolute;
+            right: -2px; bottom: -2px;
+            width: 11px; height: 11px;
+            border-radius: 50%;
+            border: 2px solid var(--bg);
+            background: var(--text-dim);
+        }
+        .recent-item.completed .recent-avatar::after { background: #4ade80; }
+        .recent-item.error .recent-avatar::after { background: #ff6b6b; }
+
+        .recent-body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+        .recent-name {
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            color: #fff;
+            font-size: .9rem;
+            font-weight: 500;
+            letter-spacing: .02em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .recent-sub { display: flex; align-items: center; gap: .45rem; font-size: .72rem; color: var(--text-dim); }
+        .recent-pill {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: .68rem;
+            letter-spacing: .03em;
+            text-transform: uppercase;
+        }
+        .recent-pill.completed { background: rgba(74,222,128,.12); color: #4ade80; }
+        .recent-pill.error     { background: rgba(255,107,107,.12); color: #ff6b6b; }
+        .recent-pill svg { width: 10px; height: 10px; }
+        .recent-dot { width: 3px; height: 3px; border-radius: 50%; background: rgba(255,255,255,.25); }
+
+        .recent-time {
+            text-align: right;
+            white-space: nowrap;
+            font-size: .72rem;
+            color: var(--text-dim);
+            display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+        }
+        .recent-time .dur {
+            font-family: ui-monospace, monospace;
+            color: var(--gold-light);
+            font-size: .7rem;
+            font-weight: 500;
+            background: rgba(255,215,0,.06);
+            border: 1px solid rgba(255,215,0,.12);
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+        @media (max-width: 500px) {
+            .recent-item { grid-template-columns: 30px 1fr auto; gap: .6rem; padding: .55rem .7rem; }
+            .recent-avatar { width: 28px; height: 28px; font-size: .78rem; }
+            .recent-name { font-size: .85rem; }
+            .recent-sub { font-size: .68rem; }
         }
 
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+        .recent-pager {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-top: .8rem; gap: .6rem;
         }
+        .recent-pager-info { font-size: .72rem; color: var(--text-dim); letter-spacing: .03em; }
+        .recent-pager-btns { display: flex; gap: .4rem; }
+        .recent-pager button {
+            display: inline-flex; align-items: center; gap: .3rem;
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08);
+            color: #ddd;
+            padding: .35rem .7rem;
+            border-radius: .55rem;
+            font-size: .75rem; font-family: inherit; font-weight: 500;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .recent-pager button:hover:not(:disabled) {
+            border-color: rgba(255,215,0,.3);
+            background: rgba(255,215,0,.06);
+            color: var(--gold-light);
+        }
+        .recent-pager button:disabled {
+            opacity: .35; cursor: not-allowed;
+        }
+        .recent-pager button svg { width: 12px; height: 12px; }
 
-        /* Customize SweetAlert2 to match glassmorphism */
+        /* ── footer ── */
+        footer {
+            position: relative;
+            z-index: 1;
+            margin-top: auto;
+            padding: 1.6rem;
+            text-align: center;
+            font-size: .82rem;
+            color: rgba(255,255,255,.25);
+        }
+        footer a { color: rgba(255,215,0,.45); text-decoration: none; transition: color .2s; }
+        footer a:hover { color: var(--gold); }
+
+        /* ── SweetAlert2 overrides ── */
         div:where(.swal2-container) div:where(.swal2-popup) {
-            background: rgba(30, 30, 30, 0.8) !important;
-            backdrop-filter: blur(16px) !important;
-            -webkit-backdrop-filter: blur(16px) !important;
-            border: var(--glass-border) !important;
-            border-radius: 1.5rem !important;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+            background: rgba(20,20,20,.88) !important;
+            backdrop-filter: blur(24px) !important;
+            -webkit-backdrop-filter: blur(24px) !important;
+            border: var(--glass) !important;
+            border-radius: var(--radius) !important;
+            box-shadow: 0 30px 60px -15px rgba(0,0,0,.6) !important;
         }
-
         div:where(.swal2-container) h2:where(.swal2-title) {
             color: #fff !important;
             font-family: 'Outfit', sans-serif !important;
         }
-
         div:where(.swal2-container) .swal2-html-container {
             font-family: 'Outfit', sans-serif !important;
-            color: var(--text-secondary) !important;
+            color: var(--text-dim) !important;
         }
 
-        /* User Info Card Styles */
         .swal2-html-container .user-info-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 1.5rem;
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 14px;
+            padding: 1.4rem;
             margin: 1rem 0;
             text-align: left;
         }
-
         .swal2-html-container .user-info-header {
             display: flex;
             align-items: center;
             gap: 1rem;
-            margin-bottom: 1rem;
+            margin-bottom: .8rem;
         }
-
         .swal2-html-container .user-avatar {
-            width: 60px;
-            height: 60px;
+            width: 56px; height: 56px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid #FFD700;
+            border: 2px solid var(--gold);
+            box-shadow: 0 0 16px rgba(255,215,0,.25);
         }
-
-        .swal2-html-container .user-details {
-            flex: 1;
-        }
-
+        .swal2-html-container .user-details { flex: 1; }
         .swal2-html-container .user-name {
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             font-weight: 600;
             color: #fff;
-            margin-bottom: 0.25rem;
+            margin-bottom: .15rem;
         }
-
-        .swal2-html-container .user-username {
-            font-size: 0.9rem;
-            color: #a0a0a0;
-        }
-
+        .swal2-html-container .user-username { font-size: .88rem; color: #888; }
         .swal2-html-container .user-uid {
-            font-size: 0.8rem;
-            color: #666;
-            margin-top: 0.5rem;
+            font-size: .75rem;
+            color: #555;
+            margin-top: .5rem;
             word-break: break-all;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0,0,0,.3);
             padding: 4px 8px;
-            border-radius: 4px;
+            border-radius: 6px;
             display: inline-block;
         }
 
-        /* Custom Buttons for Swal */
+        /* Rich-text content from admin popup (Quill output: <p>, <strong>, <a>, <ul>, etc.) */
+        .popup-rich.swal2-html-container,
+        .swal2-popup .popup-rich {
+            text-align: left;
+            margin: .25rem auto 0;
+            max-width: 32rem;
+            padding: 1rem 1.2rem;
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 14px;
+            color: #ddd;
+            font-size: .95rem;
+            line-height: 1.6;
+        }
+        .popup-rich p { margin: .25rem 0; }
+        .popup-rich p:first-child { margin-top: 0; }
+        .popup-rich p:last-child { margin-bottom: 0; }
+        .popup-rich a { color: var(--gold); text-decoration: underline; word-break: break-word; }
+        .popup-rich ul, .popup-rich ol { padding-left: 1.3rem; margin: .3rem 0; }
+        .popup-rich li { margin: .15rem 0; }
+        .popup-rich h1, .popup-rich h2, .popup-rich h3 {
+            color: var(--gold-light);
+            font-weight: 700;
+            margin: .35rem 0 .25rem;
+            line-height: 1.3;
+        }
+        .popup-rich h1 { font-size: 1.2rem; }
+        .popup-rich h2 { font-size: 1.05rem; }
+        .popup-rich h3 { font-size: .95rem; }
+        .popup-rich strong { color: #fff; font-weight: 600; }
+        .popup-rich em { color: #eee; }
+        .popup-rich u { text-decoration-color: var(--gold); }
+        .popup-rich .ql-align-center { text-align: center; }
+        .popup-rich .ql-align-right { text-align: right; }
+        .popup-rich .ql-align-justify { text-align: justify; }
+
+        /* SweetAlert action row — keep buttons same height + aligned */
+        .swal2-actions {
+            gap: .6rem !important;
+            margin-top: 1.2rem !important;
+            flex-wrap: wrap !important;
+            justify-content: center !important;
+        }
+        .swal2-actions > button {
+            margin: 0 !important;
+            min-height: 44px !important;
+            line-height: 1 !important;
+        }
+        .glass-confirm-btn,
+        .glass-cancel-btn {
+            border-radius: .75rem !important;
+            padding: 12px 26px !important;
+            font-family: 'Outfit', sans-serif !important;
+            font-size: .95rem !important;
+            font-weight: 600 !important;
+            margin: 0 !important;
+            transition: transform .2s, box-shadow .2s !important;
+        }
         .glass-confirm-btn {
-            background: var(--primary-gradient) !important;
+            background: linear-gradient(135deg, var(--gold-light), var(--gold)) !important;
             color: #000 !important;
             font-weight: 700 !important;
-            border-radius: 0.75rem !important;
-            padding: 12px 24px !important;
             border: none !important;
             box-shadow: none !important;
-            font-family: 'Outfit', sans-serif !important;
         }
-
+        .glass-confirm-btn:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 8px 20px -4px rgba(255,215,0,.35) !important;
+        }
         .glass-cancel-btn {
-            background: rgba(255, 255, 255, 0.1) !important;
+            background: rgba(255,255,255,.07) !important;
             color: #fff !important;
-            border-radius: 0.75rem !important;
-            padding: 12px 24px !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            font-family: 'Outfit', sans-serif !important;
-            margin-top: 12px !important;
-            /* Spacing between buttons */
+            border: 1px solid rgba(255,255,255,.1) !important;
+        }
+        .glass-cancel-btn:hover {
+            background: rgba(255,255,255,.12) !important;
+            transform: translateY(-1px) !important;
+        }
+        @media (max-width: 480px) {
+            .glass-confirm-btn,
+            .glass-cancel-btn { padding: 11px 22px !important; font-size: .9rem !important; }
+            .swal2-popup { padding: 1rem .8rem !important; }
         }
 
-        /* Queue Status Styles */
-        .queue-status-container {
-            padding: 1.5rem;
-            text-align: center;
-        }
-
+        /* queue modal */
+        .queue-status-container { padding: 1.2rem; text-align: center; }
         .queue-position {
-            font-size: 3rem;
-            font-weight: 700;
-            background: var(--primary-gradient);
+            font-size: 2.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--gold-light), var(--gold));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin: 1rem 0;
+            margin: .8rem 0;
             animation: pulse 2s ease-in-out infinite;
         }
-
-        .queue-info {
-            display: flex;
-            justify-content: space-around;
-            margin: 1.5rem 0;
-            gap: 1rem;
-        }
-
+        .queue-info { display: flex; justify-content: space-around; margin: 1.2rem 0; gap: .8rem; }
         .queue-stat {
             flex: 1;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 1rem;
-            border-radius: 0.75rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255,255,255,.04);
+            padding: .85rem;
+            border-radius: .7rem;
+            border: 1px solid rgba(255,255,255,.07);
         }
-
         .queue-stat-label {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
+            font-size: .7rem;
+            color: var(--text-dim);
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 0.5rem;
+            margin-bottom: .35rem;
         }
-
-        .queue-stat-value {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #FFD700;
-        }
-
+        .queue-stat-value { font-size: 1.4rem; font-weight: 600; color: var(--gold); }
         .queue-progress {
             width: 100%;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
+            height: 6px;
+            background: rgba(255,255,255,.07);
+            border-radius: 3px;
             overflow: hidden;
-            margin: 1.5rem 0;
+            margin: 1.2rem 0;
         }
-
         .queue-progress-bar {
             height: 100%;
-            background: var(--primary-gradient);
-            border-radius: 4px;
-            transition: width 0.5s ease;
-            animation: shimmer 2s infinite;
+            background: linear-gradient(90deg, var(--gold-dark), var(--gold-light));
+            border-radius: 3px;
+            transition: width .5s ease;
+        }
+        .queue-status-text { color: var(--text-dim); font-size: .88rem; margin-top: .8rem; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.65} }
+
+        /* ── Layout variants ── */
+        /* Stacked: default — single column, narrow card stack. Already covered. */
+
+        /* Split: 2-column on desktop. Hero stays sticky on the left, the rest
+           (instructions / recent / note) flows on the right.                  */
+        @media (min-width: 960px) {
+            body.layout-split .main-wrapper {
+                max-width: 1080px;
+                display: grid;
+                grid-template-columns: minmax(380px, 0.9fr) minmax(420px, 1.1fr);
+                gap: 22px;
+                align-items: start;
+            }
+            body.layout-split .main-wrapper > .card:first-child {
+                grid-row: 1 / span 5;
+                position: sticky;
+                top: 24px;
+            }
         }
 
-        .queue-status-text {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            margin-top: 1rem;
+        /* Spotlight: full-bleed hero banner across the top, content cards
+           tile beneath it in a 2-column grid on desktop.                      */
+        @media (min-width: 880px) {
+            body.layout-spotlight .main-wrapper {
+                max-width: 1100px;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 22px;
+            }
+            body.layout-spotlight .main-wrapper > .card:first-child {
+                grid-column: 1 / -1;
+                padding: 2.4rem 2rem 2rem;
+                background:
+                    radial-gradient(ellipse at 50% -20%, rgba(var(--accent-rgb),.18), transparent 60%),
+                    var(--card);
+            }
+            body.layout-spotlight .main-wrapper > .card:first-child .heart-logo {
+                width: 110px;
+                height: 110px;
+            }
+            body.layout-spotlight .hero-title {
+                font-size: 2.6rem;
+            }
         }
 
-        @keyframes pulse {
+        /* ── per-theme entrance animations ── */
+        .main-wrapper > .card {
+            animation: var(--reveal, revealUp) .7s cubic-bezier(.22,1,.36,1) both;
+        }
+        .main-wrapper > .card:nth-child(1) { animation-delay: 0.05s; }
+        .main-wrapper > .card:nth-child(2) { animation-delay: 0.18s; }
+        .main-wrapper > .card:nth-child(3) { animation-delay: 0.30s; }
+        .main-wrapper > .card:nth-child(4) { animation-delay: 0.42s; }
+        .main-wrapper > .card:nth-child(5) { animation-delay: 0.54s; }
 
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.7;
-            }
+        @keyframes revealUp {
+            0%   { opacity: 0; transform: translateY(28px) scale(.97); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes revealAurora {
+            0%   { opacity: 0; transform: translateX(-32px); filter: blur(12px) hue-rotate(45deg); }
+            60%  { filter: blur(0) hue-rotate(0); }
+            100% { opacity: 1; transform: translateX(0); filter: none; }
+        }
+        @keyframes revealSunset {
+            0%   { opacity: 0; transform: scale(.85) rotate(-1.5deg); filter: brightness(.5) saturate(1.6); }
+            100% { opacity: 1; transform: scale(1) rotate(0); filter: none; }
+        }
+        @keyframes revealMono {
+            0%   { opacity: 0; clip-path: inset(0 100% 0 0); }
+            100% { opacity: 1; clip-path: inset(0 0 0 0); }
         }
 
-        @keyframes shimmer {
-            0% {
-                background-position: -200% center;
-            }
+        /* Background-pulse on theme load */
+        .bg-glow .orb { animation: drift 18s ease-in-out infinite alternate, glowFadeIn 1.4s ease-out both; }
+        @keyframes glowFadeIn {
+            from { opacity: 0; }
+            to   { opacity: .35; }
+        }
 
-            100% {
-                background-position: 200% center;
-            }
+        /* Hero logo: extra flair on Aurora/Sunset */
+        body.theme-aurora .heart-logo,
+        body.theme-sunset .heart-logo {
+            animation: logoIn 1.1s cubic-bezier(.34,1.56,.64,1) both;
+        }
+        @keyframes logoIn {
+            0%   { transform: scale(.4) rotate(-25deg); opacity: 0; }
+            60%  { transform: scale(1.08) rotate(4deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0); }
+        }
+
+        /* Mono: subtle scanline shimmer over hero */
+        body.theme-mono .heart-logo::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,.06) 50%, transparent 100%);
+            animation: monoScan 4s linear infinite;
+            border-radius: inherit;
+            pointer-events: none;
+        }
+        @keyframes monoScan {
+            0%   { transform: translateY(-120%); }
+            100% { transform: translateY(120%); }
+        }
+
+        /* ── responsive ── */
+        @media (max-width: 600px) {
+            .main-wrapper { padding: 22px 14px 16px; gap: 16px; }
+            .card { padding: 1.5rem 1.25rem; }
+        }
+        @media (max-width: 480px) {
+            .main-wrapper { padding: 18px 12px 14px; gap: 14px; }
+            .card { padding: 1.3rem 1.1rem; border-radius: 1.1rem; }
+            .hero-title { font-size: 1.55rem; }
+            .hero-sub { font-size: .82rem; }
+            .heart-logo { width: 64px; height: 64px; }
+            .field label { font-size: .82rem; }
+            .input-wrap input { padding: 12px 14px 12px 38px; font-size: .92rem; }
+            .btn-primary { padding: 13px 18px; font-size: .95rem; }
+            .queue-badge { padding: .65rem .9rem; gap: 1.4rem; }
+            .queue-badge-value { font-size: 1rem; }
+            .recent-card h3, .note-card h3, .instructions-card h3 { font-size: .9rem; }
+            .recent-pager-info { font-size: .68rem; }
+            .recent-pager button { padding: .3rem .6rem; font-size: .72rem; }
+        }
+        @media (max-width: 360px) {
+            .hero-title { font-size: 1.35rem; }
+            .heart-logo { width: 56px; height: 56px; }
+            .card { padding: 1.1rem 1rem; }
         }
     </style>
 </head>
 
-<body>
+<body class="theme-{{ theme or 'gold' }} layout-{{ layout or 'stacked' }}">
+
+    <!-- animated background -->
+    <div class="bg-glow">
+        <div class="orb"></div>
+        <div class="orb"></div>
+        <div class="orb"></div>
+    </div>
+    <div class="particles" id="particles"></div>
 
     <div class="main-wrapper">
-        <div class="container">
-            <img src="https://play-lh.googleusercontent.com/eRZLg00mAQGayCrFjDBklPIpW3qFHcmUs8PUQA4z7hVe-cDKMcRqecVHONAIexJGJZM"
-                alt="Locket Icon" class="app-icon">
-            <h1>Locket Gold</h1>
-            <p class="subtitle">Unlock premium features instantly</p>
 
-            <div class="form-group">
-                <div class="global-queue-container" id="globalQueueContainer">
-                    <div class="global-queue-item">
-                        <div class="global-queue-label">Total Waiting</div>
-                        <div class="global-queue-value" id="globalQueueTotal">-</div>
-                    </div>
-                    <div class="global-queue-item">
-                        <div class="global-queue-label">Est. Time</div>
-                        <div class="global-queue-value" id="globalQueueTime">-</div>
-                    </div>
+        <!-- ── hero card ── -->
+        <div class="card" style="text-align:center">
+            <div class="logo-wrap">
+                <div class="heart-logo">
+                    <div class="pulse-ring"></div>
+                    <div class="pulse-ring"></div>
+                    <img src="https://play-lh.googleusercontent.com/eRZLg00mAQGayCrFjDBklPIpW3qFHcmUs8PUQA4z7hVe-cDKMcRqecVHONAIexJGJZM" alt="Locket" style="width:100%;height:100%;border-radius:18px;object-fit:cover;">
                 </div>
-
-                <label for="username">Target Username</label>
-                <input type="text" id="username" placeholder="Enter Locket username..." required autocomplete="off">
             </div>
 
-            <button id="submitBtn" onclick="checkUserInfo()">
+            <h1 class="hero-title">Locket Gold</h1>
+            <p class="hero-sub">Unlock premium features instantly</p>
+
+            <div class="queue-badge" id="globalQueueContainer">
+                <div class="queue-badge-item">
+                    <div class="queue-badge-label">Waiting</div>
+                    <div class="queue-badge-value" id="globalQueueTotal">-</div>
+                </div>
+                <div class="queue-badge-item">
+                    <div class="queue-badge-label">Est. Time</div>
+                    <div class="queue-badge-value" id="globalQueueTime">-</div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="username">Username</label>
+                <div class="input-wrap">
+                    <input type="text" id="username" placeholder="Enter Locket username..." required autocomplete="off">
+                    <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+            </div>
+
+            <button class="btn-primary" id="submitBtn" onclick="checkUserInfo()">
                 <span class="btn-text">Check User Info</span>
                 <div class="loader" id="loader"></div>
             </button>
         </div>
 
-        <div class="instructions">
+        <!-- ── instructions card ── -->
+        <div class="card instructions-card">
             <h3>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                 How to use
             </h3>
 
-            <!-- Platform Tabs -->
             <div class="platform-tabs">
                 <div class="platform-tab active" onclick="switchPlatform('ios')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                        fill="currentColor">
-                        <path
-                            d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
                     iOS
                 </div>
                 <div class="platform-tab" onclick="switchPlatform('android')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                        fill="currentColor">
-                        <path
-                            d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24a11.5 11.5 0 0 0-8.94 0L5.65 5.67c-.19-.28-.54-.37-.83-.22-.3.16-.42.54-.26.85l1.84 3.18C2.92 11.03 1 14.22 1 17.8h22c0-3.58-1.92-6.77-5.4-8.32zM7 15.25c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25zm10 0c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25z" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24a11.5 11.5 0 0 0-8.94 0L5.65 5.67c-.19-.28-.54-.37-.83-.22-.3.16-.42.54-.26.85l1.84 3.18C2.92 11.03 1 14.22 1 17.8h22c0-3.58-1.92-6.77-5.4-8.32zM7 15.25c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25zm10 0c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25z"/></svg>
                     Android
                 </div>
             </div>
 
-            <!-- iOS Content -->
             <div id="ios-content" class="platform-content active">
                 <ol>
                     <li>Open the Locket app and find your username in settings.</li>
                     <li>Enter your exact username in the field above.</li>
                     <li>Click <strong>Check User Info</strong> to verify the account.</li>
                     <li>Review the information and click <strong>Continue</strong> to unlock Gold.</li>
-                    <li><strong>Important:</strong> After activation, you must install the configuration profile below
-                        to
-                        block revocation.</li>
+                    <li><strong>Important:</strong> After activation, install the configuration profile below to block revocation.</li>
                     <li>Restart your Locket app to see the changes.</li>
                 </ol>
-                <div style="margin-top: 1rem; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                    <a href="/static/locket.mobileconfig" class="download-btn" target="_blank" style="
-                        display: inline-flex;
-                        align-items: center;
-                        background: rgba(255, 255, 255, 0.1);
-                        color: #fff;
-                        padding: 0.8rem 1.5rem;
-                        border-radius: 0.75rem;
-                        text-decoration: none;
-                        font-weight: 600;
-                        font-size: 1rem;
-                        font-family: 'Outfit', sans-serif;
-                        border: 1px solid rgba(255, 255, 255, 0.2);
-                        transition: all 0.3s ease;
-                    ">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            style="vertical-align: middle; margin-right: 8px;">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
+                <div class="action-btns">
+                    <a href="/api/mobileconfig" class="action-btn dl">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         Download Profile
                     </a>
-
-                    <button onclick="showTutorial()" style="
-                        display: inline-flex;
-                        align-items: center;
-                        width: auto;
-                        background: rgba(255, 215, 0, 0.1);
-                        color: #FFD700;
-                        padding: 0.8rem 1.5rem;
-                        border-radius: 0.75rem;
-                        font-weight: 600;
-                        font-size: 1rem;
-                        font-family: 'Outfit', sans-serif;
-                        cursor: pointer;
-                        border: 1px solid rgba(255, 215, 0, 0.2);
-                        transition: all 0.3s ease;
-                    ">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            style="vertical-align: middle; margin-right: 8px;">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polygon points="10 8 16 12 10 16 10 8"></polygon>
-                        </svg>
+                    <button class="action-btn tut" onclick="showTutorial()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
                         Watch Tutorial
                     </button>
                 </div>
+                <div class="profile-update" id="profileUpdate" style="display:none;">
+                    <span class="profile-update-dot" aria-hidden="true"></span>
+                    <span class="profile-update-text">
+                        Profile last updated
+                        <strong id="profileUpdateAgo">—</strong>
+                    </span>
+                </div>
             </div>
 
-            <!-- Android Content -->
             <div id="android-content" class="platform-content">
                 <ol>
                     <li>Open the Locket app and find your username in Settings.</li>
                     <li>Click <strong>Check User Info</strong> to verify the account.</li>
-                    <li>Go to <strong>Settings → Network & Internet</strong> on your Android device.</li>
+                    <li>Go to <strong>Settings &rarr; Network &amp; Internet</strong> on your Android device.</li>
                     <li>Tap <strong>Private DNS</strong>.</li>
                     <li>Select <strong>Private DNS provider hostname</strong>.</li>
                     <li>Enter the following hostname:</li>
@@ -706,15 +1167,35 @@
             </div>
         </div>
 
-        <div class="note">
+        <!-- ── recent activity card ── -->
+        <div class="card recent-card">
             <h3>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
-                    </path>
-                    <line x1="12" y1="9" x2="12" y2="13"></line>
-                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Recent Activity
+                <span class="recent-pulse" title="Live"></span>
+            </h3>
+            <div class="recent-list" id="recentList">
+                <div class="recent-empty">Loading…</div>
+            </div>
+            <div class="recent-pager" id="recentPager" style="display:none;">
+                <span class="recent-pager-info" id="recentPagerInfo">—</span>
+                <div class="recent-pager-btns">
+                    <button id="recentPrev" type="button" aria-label="Previous">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                        Prev
+                    </button>
+                    <button id="recentNext" type="button" aria-label="Next">
+                        Next
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── note card ── -->
+        <div class="card note-card">
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 Important Note
             </h3>
             <ul>
@@ -726,50 +1207,40 @@
     </div>
 
     <footer>
-        <p>Created with ❤️ by <a href="https://maihuybao.dev" target="_blank">Mai Huy Bao</a></p>
-        <p style="margin-top: 5px; font-size: 0.8rem;">
-            <a href="https://github.com/maihuybao/LocketGoldUnlockerWithUsername" target="_blank" style="opacity: 0.7;">
-                Open Source on GitHub
-            </a>
-        </p>
+        <p>Created with <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;color:#ff6b6b"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> by <a href="https://maihuybao.dev" target="_blank">Mai Huy Bao</a></p>
+        <p style="margin-top:4px">Developed and operated with <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;color:#ff6b6b"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> by <a href="https://nguyenthanhson.dev" target="_blank">Nguyen Thanh Son</a></p>
+        <p style="margin-top:6px;font-size:.78rem"><a href="https://github.com/maihuybao/LocketGoldUnlockerWithUsername" target="_blank" style="opacity:.6">Open Source on GitHub</a></p>
     </footer>
 
-    <!-- SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // Platform switching function
-        function switchPlatform(platform) {
-            // Update tabs
-            document.querySelectorAll('.platform-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.target.closest('.platform-tab').classList.add('active');
+        // ── particles ──
+        (function initParticles() {
+            const c = document.getElementById('particles');
+            const count = window.innerWidth < 500 ? 14 : 24;
+            for (let i = 0; i < count; i++) {
+                const s = document.createElement('span');
+                s.style.left = Math.random() * 100 + '%';
+                s.style.animationDuration = (8 + Math.random() * 14) + 's';
+                s.style.animationDelay  = (Math.random() * 12) + 's';
+                s.style.width = s.style.height = (2 + Math.random() * 2) + 'px';
+                c.appendChild(s);
+            }
+        })();
 
-            // Update content
-            document.querySelectorAll('.platform-content').forEach(content => {
-                content.classList.remove('active');
-            });
+        // ── platform tabs ──
+        function switchPlatform(platform) {
+            document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
+            event.target.closest('.platform-tab').classList.add('active');
+            document.querySelectorAll('.platform-content').forEach(c => c.classList.remove('active'));
             document.getElementById(platform + '-content').classList.add('active');
         }
 
         function showTutorial() {
             Swal.fire({
                 title: 'How to Install',
-                html: `
-                    <div style="
-                        border-radius: 1rem;
-                        overflow: hidden;
-                        border: 1px solid rgba(255, 255, 255, 0.1);
-                        background: rgba(0, 0, 0, 0.2);
-                    ">
-                        <iframe src="https://www.youtube.com/embed/DVEkn_AZd4w?autoplay=1" title="YouTube video player"
-                            style="width: 100%; aspect-ratio: 9/16; border: 0; display: block;"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                            allowfullscreen>
-                        </iframe>
-                    </div>
-                `,
+                html: `<div style="border-radius:1rem;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.2)"><iframe src="https://www.youtube.com/embed/DVEkn_AZd4w?autoplay=1" title="Tutorial" style="width:100%;aspect-ratio:9/16;border:0;display:block" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;web-share" allowfullscreen></iframe></div>`,
                 ...swalGlassParams,
                 showConfirmButton: false,
                 showCloseButton: true,
@@ -781,7 +1252,7 @@
         let currentUserData = null;
 
         const swalGlassParams = {
-            background: 'transparent', // Handled by CSS
+            background: 'transparent',
             customClass: {
                 popup: 'glass-popup',
                 confirmButton: 'glass-confirm-btn',
@@ -798,17 +1269,10 @@
             const btnText = document.querySelector('.btn-text');
 
             if (!username) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Missing Input',
-                    text: 'Please enter a valid Locket username!',
-                    ...swalGlassParams,
-                    confirmButtonText: 'OK'
-                });
+                Swal.fire({ icon: 'warning', title: 'Missing Input', text: 'Please enter a valid Locket username!', ...swalGlassParams, confirmButtonText: 'OK' });
                 return;
             }
 
-            // Loading state
             btn.disabled = true;
             loader.style.display = 'block';
             btnText.style.display = 'none';
@@ -816,40 +1280,47 @@
             try {
                 const response = await fetch('/api/get-user-info', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        username: username
-                    }),
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username }),
                 });
-
                 const data = await response.json();
 
                 if (response.ok && data.success) {
                     currentUserData = data.data;
                     showUserInfoConfirmation(data.data);
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'User Not Found',
-                        text: data.msg || "Could not find user with this username",
-                        ...swalGlassParams,
-                        confirmButtonColor: undefined, // Override if needed or rely on class
-                        confirmButtonText: 'Close'
-                    });
+                    const msg = data.msg || `Could not find user with this username`;
+                    const transient = /5\d\d|Bad Gateway|Service Unavailable|Gateway Timeout|Timeout|ConnectionError|Internal Server/i.test(msg);
+                    if (transient) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Locket server đang lỗi',
+                            html: `<div style="text-align:left;line-height:1.65">
+                                    <strong style="color:#FFE55C">Đây là lỗi từ phía máy chủ Locket</strong>
+                                    <span style="color:#aaa">— không phải tool của bạn.</span><br><br>
+                                    Locket đang trả lỗi <code>502 Bad Gateway</code>. Tool đã tự động
+                                    thử lại nhiều lần qua các IP khác nhau nhưng vẫn lỗi.<br><br>
+                                    <strong style="color:#fff">Hãy thử lại sau 1–5 phút.</strong>
+                                    Admin có thể bật proxy ở <code>/admin</code> để giảm tỉ lệ 502.
+                                  </div>`,
+                            ...swalGlassParams,
+                            customClass: { htmlContainer: 'popup-rich' },
+                            confirmButtonText: 'OK',
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'User Not Found',
+                            text: msg,
+                            ...swalGlassParams,
+                            confirmButtonText: 'Close',
+                        });
+                    }
                 }
             } catch (error) {
                 console.error('Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Connection Error',
-                    text: 'Failed to connect to the server. Please check your internet.',
-                    ...swalGlassParams,
-                    confirmButtonText: 'Close'
-                });
+                Swal.fire({ icon: 'error', title: 'Connection Error', text: 'Failed to connect to the server. Please check your internet.', ...swalGlassParams, confirmButtonText: 'Close' });
             } finally {
-                // Reset state
                 btn.disabled = false;
                 loader.style.display = 'none';
                 btnText.style.display = 'inline-block';
@@ -873,55 +1344,33 @@
                     </div>
                     <div class="user-uid">UID: ${userData.uid}</div>
                 </div>
-                <p style="margin-top: 1rem; color: #a0a0a0; font-size: 0.9rem;">
-                    Do you want to unlock Gold for this user?
-                </p>
-            `,
+                <p style="margin-top:1rem;color:#888;font-size:.9rem">Do you want to unlock Gold for this user?</p>`,
                 ...swalGlassParams,
                 showCancelButton: true,
                 confirmButtonText: 'Continue',
                 cancelButtonText: 'Cancel'
             }).then((result) => {
-                if (result.isConfirmed) {
-                    restorePurchase(userData.username);
-                }
+                if (result.isConfirmed) restorePurchase(userData.username);
             });
         }
 
         async function restorePurchase(username) {
             try {
-                // Join queue
                 const response = await fetch('/api/restore', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ username: username }),
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username }),
                 });
-
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    // Show queue status and start polling
                     showQueueStatus(data.client_id, username);
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: data.msg || "Failed to join queue",
-                        ...swalGlassParams,
-                        confirmButtonText: 'Close'
-                    });
+                    Swal.fire({ icon: 'error', title: 'Error', text: data.msg || "Failed to join queue", ...swalGlassParams, confirmButtonText: 'Close' });
                 }
             } catch (error) {
                 console.error('Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Connection Error',
-                    text: 'Failed to connect to the server. Please check your internet.',
-                    ...swalGlassParams,
-                    confirmButtonText: 'Close'
-                });
+                Swal.fire({ icon: 'error', title: 'Connection Error', text: 'Failed to connect to the server. Please check your internet.', ...swalGlassParams, confirmButtonText: 'Close' });
             }
         }
 
@@ -933,7 +1382,6 @@
         const MAX_POLL_RETRIES = 3;
 
         function showQueueStatus(clientId, username) {
-            // Reset state
             lastPosition = null;
             currentEstimatedTime = 0;
             pollRetryCount = 0;
@@ -941,29 +1389,19 @@
             if (countdownInterval) clearInterval(countdownInterval);
             countdownInterval = null;
 
-            // Show initial queue modal
             Swal.fire({
                 title: 'Queue Status',
                 html: `
                     <div class="queue-status-container">
                         <div class="queue-status-text">Joining queue...</div>
                         <div class="queue-position" id="queuePosition">-</div>
-                        <div class="queue-progress">
-                            <div class="queue-progress-bar" id="queueProgressBar" style="width: 0%"></div>
-                        </div>
+                        <div class="queue-progress"><div class="queue-progress-bar" id="queueProgressBar" style="width:0%"></div></div>
                         <div class="queue-info">
-                            <div class="queue-stat">
-                                <div class="queue-stat-label">Total Waiting</div>
-                                <div class="queue-stat-value" id="queueTotal">-</div>
-                            </div>
-                            <div class="queue-stat">
-                                <div class="queue-stat-label">Est. Time</div>
-                                <div class="queue-stat-value" id="queueTime">-</div>
-                            </div>
+                            <div class="queue-stat"><div class="queue-stat-label">Total Waiting</div><div class="queue-stat-value" id="queueTotal">-</div></div>
+                            <div class="queue-stat"><div class="queue-stat-label">Est. Time</div><div class="queue-stat-value" id="queueTime">-</div></div>
                         </div>
                         <div class="queue-status-text" id="queueStatusText">Please wait...</div>
-                    </div>
-                `,
+                    </div>`,
                 ...swalGlassParams,
                 showConfirmButton: false,
                 showCancelButton: false,
@@ -971,7 +1409,6 @@
                 allowEscapeKey: false,
             });
 
-            // Start polling
             pollQueueStatus(clientId, username);
         }
 
@@ -979,43 +1416,28 @@
             try {
                 const response = await fetch('/api/queue/status', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ client_id: clientId }),
                 });
-
                 const data = await response.json();
 
                 if (response.ok && data.success) {
                     if (data.status === 'not_found') {
-                        // Retry a few times before giving up
                         pollRetryCount++;
                         if (pollRetryCount < MAX_POLL_RETRIES) {
-                            console.log(`Request not found, retry ${pollRetryCount}/${MAX_POLL_RETRIES}`);
                             pollInterval = setTimeout(() => pollQueueStatus(clientId, username), 2000);
                             return;
                         }
-
-                        // Request not found after retries - stop polling and show error
                         clearInterval(pollInterval);
                         clearInterval(countdownInterval);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Request Not Found',
-                            text: 'Your request could not be found. Please try again.',
-                            ...swalGlassParams,
-                            confirmButtonText: 'Close'
-                        });
+                        Swal.fire({ icon: 'error', title: 'Request Not Found', text: 'Your request could not be found. Please try again.', ...swalGlassParams, confirmButtonText: 'Close' });
                         resetGlobalQueueUI();
                         return;
                     }
 
-                    // Reset retry count on successful status
                     pollRetryCount = 0;
                     updateQueueUI(data, username);
 
-                    // Check if completed or error
                     if (data.status === 'completed') {
                         clearInterval(pollInterval);
                         clearInterval(countdownInterval);
@@ -1027,24 +1449,16 @@
                         showErrorStatus(data);
                         resetGlobalQueueUI();
                     } else {
-                        // Continue polling
                         pollInterval = setTimeout(() => pollQueueStatus(clientId, username), 1000);
                     }
                 } else {
                     clearInterval(pollInterval);
                     clearInterval(countdownInterval);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: data.msg || 'Failed to get queue status',
-                        ...swalGlassParams,
-                        confirmButtonText: 'Close'
-                    });
+                    Swal.fire({ icon: 'error', title: 'Error', text: data.msg || 'Failed to get queue status', ...swalGlassParams, confirmButtonText: 'Close' });
                     resetGlobalQueueUI();
                 }
             } catch (error) {
                 console.error('Polling error:', error);
-                // Retry after 2 seconds on network error
                 pollInterval = setTimeout(() => pollQueueStatus(clientId, username), 2000);
             }
         }
@@ -1057,7 +1471,6 @@
             const progressBar = document.getElementById('queueProgressBar');
 
             if (positionEl && totalEl && timeEl && statusEl && progressBar) {
-                // Update position
                 if (data.status === 'processing') {
                     positionEl.textContent = 'Processing';
                     statusEl.textContent = `Processing request for ${username}...`;
@@ -1069,31 +1482,22 @@
                 } else {
                     positionEl.textContent = `#${data.position}`;
                     statusEl.textContent = `Position ${data.position} of ${data.total_queue}`;
-
-                    // Calculate progress (inverse of position)
-                    const progress = data.total_queue > 0 ?
-                        Math.max(10, (1 - (data.position / (data.total_queue + 1))) * 70) : 10;
+                    const progress = data.total_queue > 0 ? Math.max(10, (1 - (data.position / (data.total_queue + 1))) * 70) : 10;
                     progressBar.style.width = `${progress}%`;
                 }
 
-                // Update total
                 totalEl.textContent = data.total_queue;
                 updateGlobalQueueUI(data);
 
-                // Update time ONLY if position changed to prevent jitter
                 if (lastPosition !== data.position) {
                     currentEstimatedTime = data.estimated_time;
                     lastPosition = data.position;
                     updateTimeDisplay();
                 }
 
-                // Ensure countdown is running
                 if (!countdownInterval) {
                     countdownInterval = setInterval(() => {
-                        if (currentEstimatedTime > 0) {
-                            currentEstimatedTime--;
-                            updateTimeDisplay();
-                        }
+                        if (currentEstimatedTime > 0) { currentEstimatedTime--; updateTimeDisplay(); }
                     }, 1000);
                 }
             }
@@ -1102,36 +1506,30 @@
         function updateTimeDisplay() {
             const timeEl = document.getElementById('queueTime');
             const globalTimeEl = document.getElementById('globalQueueTime');
-
             let formatted = 'Soon';
             if (currentEstimatedTime !== 0) {
                 if (currentEstimatedTime < 60) {
                     formatted = `${currentEstimatedTime}s`;
                 } else {
-                    const minutes = Math.floor(currentEstimatedTime / 60);
-                    const seconds = currentEstimatedTime % 60;
-                    formatted = `${minutes}m ${seconds}s`;
+                    formatted = `${Math.floor(currentEstimatedTime / 60)}m ${currentEstimatedTime % 60}s`;
                 }
             }
-
             if (timeEl) timeEl.textContent = formatted;
             if (globalTimeEl) globalTimeEl.textContent = formatted;
         }
 
         function updateGlobalQueueUI(data) {
-            const containerEl = document.getElementById('globalQueueContainer');
+            const el = document.getElementById('globalQueueContainer');
             const totalEl = document.getElementById('globalQueueTotal');
-
-            if (containerEl) containerEl.style.display = 'grid';
+            if (el) el.style.display = 'grid';
             if (totalEl) totalEl.textContent = data.total_queue;
         }
 
         function resetGlobalQueueUI() {
-            const containerEl = document.getElementById('globalQueueContainer');
+            const el = document.getElementById('globalQueueContainer');
             const totalEl = document.getElementById('globalQueueTotal');
             const timeEl = document.getElementById('globalQueueTime');
-
-            if (containerEl) containerEl.style.display = 'grid';
+            if (el) el.style.display = 'grid';
             if (totalEl) totalEl.textContent = '0';
             if (timeEl) timeEl.textContent = 'Soon';
         }
@@ -1140,79 +1538,207 @@
             try {
                 const response = await fetch('/api/queue/global-status');
                 const data = await response.json();
-
                 if (response.ok && data.success) {
                     const totalEl = document.getElementById('globalQueueTotal');
                     const timeEl = document.getElementById('globalQueueTime');
-                    const containerEl = document.getElementById('globalQueueContainer');
-
-                    if (containerEl) containerEl.style.display = 'grid';
+                    const el = document.getElementById('globalQueueContainer');
+                    if (el) el.style.display = 'grid';
                     if (totalEl) totalEl.textContent = data.total_queue;
-
-                    // Update estimated time
-                    let formattedTime = 'Soon';
+                    let ft = 'Soon';
                     if (data.estimated_time > 0) {
-                        if (data.estimated_time < 60) {
-                            formattedTime = `${data.estimated_time}s`;
-                        } else {
-                            const minutes = Math.floor(data.estimated_time / 60);
-                            const seconds = data.estimated_time % 60;
-                            formattedTime = `${minutes}m ${seconds}s`;
-                        }
+                        ft = data.estimated_time < 60 ? `${data.estimated_time}s` : `${Math.floor(data.estimated_time / 60)}m ${data.estimated_time % 60}s`;
                     }
-                    if (timeEl) timeEl.textContent = formattedTime;
+                    if (timeEl) timeEl.textContent = ft;
                 }
-            } catch (error) {
-                console.error('Error fetching global queue status:', error);
+            } catch (e) { console.error('Error fetching global queue status:', e); }
+        }
+
+        async function checkSiteSettings() {
+            try {
+                const res = await fetch('/api/site-settings');
+                const data = await res.json();
+                if (!data || !data.success) return;
+                if (data.maintenance_active) {
+                    // Server gates non-admin users behind /maintenance — reload
+                    // to render the dedicated page from Flask. Admins logged
+                    // in to /admin bypass this so they can keep working.
+                    location.reload();
+                    return;
+                }
+                const p = data.popup || {};
+                if (p.enabled && p.message) {
+                    Swal.fire({
+                        icon: p.icon || 'info',
+                        title: p.title || 'Notice',
+                        html: p.message,
+                        ...swalGlassParams,
+                        confirmButtonText: 'OK',
+                        customClass: { htmlContainer: 'popup-rich' },
+                    });
+                }
+            } catch (e) { console.error('site-settings:', e); }
+        }
+
+        function timeAgo(iso) {
+            if (!iso) return '—';
+            const s = (Date.now() - new Date(iso).getTime()) / 1000;
+            if (s < 0) return 'now';
+            if (s < 60) return `${Math.floor(s)}s ago`;
+            if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+            if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+            return `${Math.floor(s / 86400)}d ago`;
+        }
+
+        const RECENT_PAGE_SIZE = 5;
+        let _recentItems = [];
+        let _recentPage = 0;
+
+        function renderRecentPage() {
+            const wrap = document.getElementById('recentList');
+            const pager = document.getElementById('recentPager');
+            if (!wrap || !pager) return;
+            if (!_recentItems.length) {
+                wrap.innerHTML = '<div class="recent-empty">No activity yet</div>';
+                pager.style.display = 'none';
+                return;
+            }
+            const totalPages = Math.max(1, Math.ceil(_recentItems.length / RECENT_PAGE_SIZE));
+            if (_recentPage >= totalPages) _recentPage = totalPages - 1;
+            const start = _recentPage * RECENT_PAGE_SIZE;
+            const slice = _recentItems.slice(start, start + RECENT_PAGE_SIZE);
+            const checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+            const xSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+            wrap.innerHTML = slice.map(it => {
+                const cls = it.status === 'completed' ? 'completed' : (it.status === 'error' ? 'error' : '');
+                const dur = it.duration != null ? `${it.duration.toFixed(1)}s` : '—';
+                const initial = (it.username || '?').charAt(0).toUpperCase();
+                const pillIcon = it.status === 'completed' ? checkSvg : (it.status === 'error' ? xSvg : '');
+                const pillLabel = it.status === 'completed' ? 'Unlocked' : (it.status === 'error' ? 'Failed' : it.status);
+                return `
+                    <div class="recent-item ${cls}">
+                        <div class="recent-avatar">${initial}</div>
+                        <div class="recent-body">
+                            <span class="recent-name">${it.username}</span>
+                            <div class="recent-sub">
+                                <span class="recent-pill ${cls}">${pillIcon}${pillLabel}</span>
+                            </div>
+                        </div>
+                        <div class="recent-time">
+                            <span>${timeAgo(it.completed_at)}</span>
+                            <span class="dur">${dur}</span>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            if (_recentItems.length > RECENT_PAGE_SIZE) {
+                pager.style.display = 'flex';
+                document.getElementById('recentPagerInfo').textContent =
+                    `Page ${_recentPage + 1} / ${totalPages} · ${_recentItems.length} total`;
+                document.getElementById('recentPrev').disabled = _recentPage <= 0;
+                document.getElementById('recentNext').disabled = _recentPage >= totalPages - 1;
+            } else {
+                pager.style.display = 'none';
             }
         }
+
+        async function fetchRecentHistory() {
+            try {
+                const res = await fetch('/api/recent-history');
+                const data = await res.json();
+                if (!data || !data.success) return;
+                _recentItems = data.items || [];
+                renderRecentPage();
+            } catch (e) { console.error('recent-history:', e); }
+        }
+
+        function fmtAgoEpoch(epoch) {
+            if (!epoch) return '—';
+            const s = Date.now() / 1000 - epoch;
+            if (s < 5) return 'just now';
+            if (s < 60) return `${Math.floor(s)} seconds ago`;
+            if (s < 3600) {
+                const m = Math.floor(s/60);
+                return `${m} minute${m === 1 ? '' : 's'} ago`;
+            }
+            if (s < 86400) {
+                const h = Math.floor(s/3600);
+                return `${h} hour${h === 1 ? '' : 's'} ago`;
+            }
+            const days = Math.floor(s / 86400);
+            return `${days} day${days === 1 ? '' : 's'} ago`;
+        }
+        function fmtBytesPublic(n) {
+            if (n == null) return '';
+            if (n < 1024) return `${n} B`;
+            if (n < 1024 * 1024) return `${(n/1024).toFixed(1)} KB`;
+            return `${(n/1024/1024).toFixed(2)} MB`;
+        }
+        function escapeHtmlPublic(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+        let _lastProfileUpload = null;
+        async function fetchProfileHistory() {
+            try {
+                const res = await fetch('/api/mobileconfig/history');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data || !data.success) return;
+                const items = data.items || [];
+                _lastProfileUpload = items.find(i => i.action === 'upload') || null;
+                renderProfileUpdate();
+            } catch (e) { console.error('mobileconfig-history:', e); }
+        }
+        function renderProfileUpdate() {
+            const wrap = document.getElementById('profileUpdate');
+            const ago = document.getElementById('profileUpdateAgo');
+            if (!_lastProfileUpload) {
+                if (wrap) wrap.style.display = 'none';
+                return;
+            }
+            if (wrap) wrap.style.display = 'flex';
+            if (ago) ago.textContent = fmtAgoEpoch(_lastProfileUpload.created_at);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchProfileHistory();
+            setInterval(fetchProfileHistory, 30000);
+            setInterval(renderProfileUpdate, 30000);
+        });
+
+        document.getElementById('recentPrev').addEventListener('click', () => {
+            if (_recentPage > 0) { _recentPage--; renderRecentPage(); }
+        });
+        document.getElementById('recentNext').addEventListener('click', () => {
+            const totalPages = Math.ceil(_recentItems.length / RECENT_PAGE_SIZE);
+            if (_recentPage < totalPages - 1) { _recentPage++; renderRecentPage(); }
+        });
 
         document.addEventListener('DOMContentLoaded', () => {
             fetchGlobalQueueStatus();
             setInterval(fetchGlobalQueueStatus, 5000);
             resetGlobalQueueUI();
+            checkSiteSettings();
+            fetchRecentHistory();
+            setInterval(fetchRecentHistory, 5000);
         });
 
         function showCompletedStatus(data) {
             if (data.result && data.result.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success!',
-                    text: data.result.msg,
-                    ...swalGlassParams,
-                    confirmButtonText: 'Cool!'
-                });
+                Swal.fire({ icon: 'success', title: 'Success!', text: data.result.msg, ...swalGlassParams, confirmButtonText: 'Cool!' });
             } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Failed',
-                    text: 'Request completed but failed',
-                    ...swalGlassParams,
-                    confirmButtonText: 'Close'
-                });
+                Swal.fire({ icon: 'error', title: 'Failed', text: 'Request completed but failed', ...swalGlassParams, confirmButtonText: 'Close' });
             }
         }
 
         function showErrorStatus(data) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: data.error || 'An error occurred while processing your request',
-                ...swalGlassParams,
-                confirmButtonText: 'Close'
-            });
+            Swal.fire({ icon: 'error', title: 'Error', text: data.error || 'An error occurred while processing your request', ...swalGlassParams, confirmButtonText: 'Close' });
         }
 
-        // Allow pressing Enter to submit
-        document.getElementById("username").addEventListener("keyup", function (event) {
-            if (event.keyCode === 13) {
-                event.preventDefault();
-                document.getElementById("submitBtn").click();
-            }
+        document.getElementById("username").addEventListener("keyup", function(event) {
+            if (event.keyCode === 13) { event.preventDefault(); document.getElementById("submitBtn").click(); }
         });
     </script>
-
-    <a href="/admin" style="position:fixed; bottom:14px; right:14px; color:rgba(255,215,0,0.55); font-size:0.78em; text-decoration:none; padding:6px 10px; border:1px solid rgba(255,215,0,0.18); border-radius:8px; background:rgba(0,0,0,0.35); backdrop-filter:blur(8px);">Admin</a>
 </body>
-
 </html>

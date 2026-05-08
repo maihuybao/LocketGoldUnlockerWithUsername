@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>PayloadContent</key>
+    <array>
+      <dict>
+        <key>DNSSettings</key>
+        <dict>
+          <key>DNSProtocol</key>
+          <string>HTTPS</string>
+          <key>ServerURL</key>
+          <string>https://dns.nextdns.io/REPLACE_WITH_YOUR_NEXTDNS_ID</string>
+        </dict>
+        <key>OnDemandRules</key>
+        <array>
+          <dict>
+            <key>Action</key>
+            <string>Connect</string>
+            <key>InterfaceTypeMatch</key>
+            <string>WiFi</string>
+          </dict>
+          <dict>
+            <key>Action</key>
+            <string>Connect</string>
+            <key>InterfaceTypeMatch</key>
+            <string>Cellular</string>
+          </dict>
+          <dict>
+            <key>Action</key>
+            <string>Disconnect</string>
+          </dict>
+        </array>
+        <key>PayloadDescription</key>
+        <string>Block Locket revocation endpoints via encrypted DNS</string>
+        <key>PayloadDisplayName</key>
+        <string>Locket Gold Block</string>
+        <key>PayloadIdentifier</key>
+        <string>com.locket.gold.block.dns.48c40ded-ec07-4d1c-9b61-58023e94f4f7</string>
+        <key>PayloadType</key>
+        <string>com.apple.dnsSettings.managed</string>
+        <key>PayloadUUID</key>
+        <string>5B4E52EF-FC7E-471A-B354-EABA4E229BE0</string>
+        <key>PayloadVersion</key>
+        <integer>1</integer>
+        <key>ProhibitDisablement</key>
+        <false/>
+      </dict>
+    </array>
+    <key>PayloadDescription</key>
+    <string>Routes DNS through your private NextDNS profile so Locket can not revoke Gold.</string>
+    <key>PayloadDisplayName</key>
+    <string>Locket Gold - Revocation Block</string>
+    <key>PayloadIdentifier</key>
+    <string>com.locket.gold.block.bf5102b8-50cf-4d46-8a42-4fa04ae989d9</string>
+    <key>PayloadRemovalDisallowed</key>
+    <false/>
+    <key>PayloadType</key>
+    <string>Configuration</string>
+    <key>PayloadUUID</key>
+    <string>74436554-1836-4EDB-9B47-01EF7F2B33B2</string>
+    <key>PayloadVersion</key>
+    <integer>1</integer>
+  </dict>
+</plist>

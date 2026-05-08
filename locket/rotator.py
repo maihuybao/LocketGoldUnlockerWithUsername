@@ -24,13 +24,14 @@ from .locket_api import LocketAPI
 
 
 class _Slot:
-    __slots__ = ("email", "password", "auth", "api")
+    __slots__ = ("email", "password", "auth", "api", "token_at")
 
     def __init__(self, email, password):
         self.email = email
         self.password = password
         self.auth = Auth(email, password)
         self.api = None
+        self.token_at = 0.0  # epoch when current token was minted
 
 
 class AccountRotator:
@@ -69,6 +70,54 @@ class AccountRotator:
 
         print(f"AccountRotator: loaded {len(self._slots)} account(s)")
 
+        # Background thread: proactively refresh tokens before they hit the
+        # 1h Firebase TTL. Daemon thread, never joined.
+        self._stop_refresher = threading.Event()
+        self._refresher = threading.Thread(
+            target=self._refresher_loop,
+            daemon=True,
+            name="rotator-token-refresher",
+        )
+        self._refresher.start()
+
+    def ensure_fresh(self, slot_id):
+        """Return the slot's LocketAPI, refreshing the token first if it's
+        older than TOKEN_TTL_SEC. Used by sync endpoints right before they
+        hit getUserByUsername so the call always carries a fresh token."""
+        with self._lock:
+            if slot_id not in self._slots:
+                raise KeyError(f"Unknown slot_id: {slot_id}")
+            slot = self._slots[slot_id]
+            stale = (time.time() - slot.token_at) >= self.TOKEN_TTL_SEC or slot.api is None
+        if stale:
+            print(f"AccountRotator: ensure_fresh refreshing {slot_id[:8]}")
+            api = self.refresh(slot_id)
+            if api is not None:
+                return api
+        with self._lock:
+            return self._slots[slot_id].api
+
+    def _refresher_loop(self):
+        """Wake every minute; refresh any slot whose token is older than TTL."""
+        while not self._stop_refresher.wait(self.REFRESHER_INTERVAL_SEC):
+            try:
+                slot_ids = self.list_ids()
+                now = time.time()
+                for sid in slot_ids:
+                    try:
+                        with self._lock:
+                            if sid not in self._slots:
+                                continue
+                            age = now - self._slots[sid].token_at
+                            stale = age >= self.TOKEN_TTL_SEC and self._slots[sid].api is not None
+                        if stale:
+                            print(f"AccountRotator: token age {int(age)}s on {sid[:8]} — refreshing")
+                            self.refresh(sid)
+                    except Exception as e:
+                        print(f"AccountRotator: refresher error on {sid}: {e}")
+            except Exception as e:
+                print(f"AccountRotator: refresher loop error: {e}")
+
     def _seed_from_env(self):
         email = os.getenv("EMAIL")
         password = os.getenv("PASSWORD")
@@ -81,11 +130,19 @@ class AccountRotator:
         )
         print(f"AccountRotator: seeded one account from EMAIL env var")
 
+    # Firebase id tokens technically last ~1 hour, but Locket's edge starts
+    # 502-ing on tokens that are even slightly stale during their incidents.
+    # Keep tokens fresh: anything older than 5 min is refreshed proactively,
+    # and the background loop ticks every 60s.
+    TOKEN_TTL_SEC = 5 * 60
+    REFRESHER_INTERVAL_SEC = 60
+
     def _init_slot_locked(self, slot_id):
         """Caller must hold self._lock."""
         slot = self._slots[slot_id]
         token = slot.auth.get_token()
         slot.api = LocketAPI(token)
+        slot.token_at = time.time()
 
     # --- Read API ---
 
@@ -157,6 +214,7 @@ class AccountRotator:
             try:
                 new_token = slot.auth.create_token()
                 slot.api = LocketAPI(new_token)
+                slot.token_at = time.time()
                 return slot.api
             except Exception as e:
                 print(f"AccountRotator: refresh failed for slot {slot_id}: {e}")

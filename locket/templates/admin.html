@@ -1,164 +1,966 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin · Locket Gold</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
     <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
         :root {
-            --primary-gradient: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
-            --bg-color: #050505;
-            --card-bg: rgba(20, 20, 20, 0.7);
-            --text-color: #fff;
-            --text-secondary: #b0b0b0;
-            --input-bg: rgba(255, 255, 255, 0.03);
-            --border-color: rgba(255, 215, 0, 0.1);
-            --glass-border: 1px solid rgba(255, 215, 0, 0.15);
+            --gold: #FFD700;
+            --gold-light: #FFE55C;
+            --gold-dark: #E5A100;
+            --bg: #050505;
+            --card: rgba(16, 16, 16, 0.75);
+            --text: #fff;
+            --text-dim: #999;
+            --glass: 1px solid rgba(255,215,0,0.12);
+            --radius: 1.1rem;
             --danger: #ff6b6b;
+            --success: #4ade80;
         }
+
         body {
             font-family: 'Outfit', sans-serif;
-            background-color: var(--bg-color);
-            background-image:
-                radial-gradient(at 0% 0%, hsla(50, 100%, 10%, 1) 0, transparent 50%),
-                radial-gradient(at 100% 0%, hsla(45, 100%, 12%, 1) 0, transparent 50%);
-            color: var(--text-color);
-            margin: 0; padding: 24px 16px;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 24px 16px;
+            min-height: 100vh;
         }
-        .wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+        /* animated bg */
+        .bg-glow {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+        }
+        .bg-glow .orb {
+            position: absolute; border-radius: 50%; filter: blur(100px); opacity: .3;
+            animation: drift 18s ease-in-out infinite alternate;
+        }
+        .bg-glow .orb:nth-child(1) {
+            width: 380px; height: 380px;
+            background: radial-gradient(circle, rgba(255,215,0,.4), transparent 70%);
+            top: -8%; left: -4%;
+        }
+        .bg-glow .orb:nth-child(2) {
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(255,180,0,.25), transparent 70%);
+            bottom: -6%; right: -4%;
+            animation-delay: -7s; animation-duration: 20s;
+        }
+        @keyframes drift {
+            0%   { transform: translate(0,0) scale(1); }
+            50%  { transform: translate(30px,-20px) scale(1.1); }
+            100% { transform: translate(-15px,15px) scale(.95); }
+        }
+
+        .wrap {
+            position: relative; z-index: 1;
+            max-width: 960px; margin: 0 auto;
+            display: flex; flex-direction: column; gap: 18px;
+        }
+
+        /* header */
         header {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 4px 4px 8px;
+            padding: 4px 2px 8px; flex-wrap: wrap; gap: 10px;
         }
-        header h1 { margin: 0; font-size: 1.3em; font-weight: 600; }
-        header .actions { display: flex; gap: 8px; }
+        .header-title {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 1.3em; font-weight: 700;
+        }
+        .header-title svg { color: var(--gold); flex-shrink: 0; }
+        .header-title span {
+            background: linear-gradient(135deg, var(--gold-light), var(--gold));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .header-actions { display: flex; gap: 8px; }
+
+        /* card */
         .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(16px);
-            border: var(--glass-border);
-            border-radius: 18px;
-            padding: 22px 22px 18px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            background: var(--card);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            border: var(--glass);
+            border-radius: var(--radius);
+            padding: 20px 22px 18px;
+            position: relative; overflow: hidden;
+            transition: transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s ease;
+        }
+        .card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 16px 48px -12px rgba(255,215,0,.08);
+        }
+        .card::before {
+            content: '';
+            position: absolute; inset: -1px;
+            border-radius: inherit; padding: 1px;
+            background: linear-gradient(160deg, rgba(255,215,0,.18), transparent 40%, transparent 60%, rgba(255,215,0,.06));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude;
+            pointer-events: none;
         }
         .card h2 {
             margin: 0 0 14px; font-size: 1.05em; font-weight: 600;
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex; justify-content: space-between; align-items: center; gap: 8px;
         }
+        .card h2 .section-icon { color: var(--gold); flex-shrink: 0; }
+
         .pill {
-            font-size: 0.7em; padding: 3px 9px; border-radius: 999px;
-            background: rgba(255,215,0,0.12); color: #fdd84e; font-weight: 500;
+            font-size: .7em; padding: 3px 10px; border-radius: 999px;
+            background: rgba(255,215,0,.1); color: var(--gold-light); font-weight: 500;
         }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
-        th, td {
-            text-align: left; padding: 8px 6px;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-        }
-        th { color: var(--text-secondary); font-weight: 500; font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.04em; }
-        td.mono { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.82em; color: var(--text-secondary); }
+
+        /* table */
+        table { width: 100%; border-collapse: collapse; font-size: .9em; }
+        th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,.04); }
+        th { color: var(--text-dim); font-weight: 500; font-size: .78em; text-transform: uppercase; letter-spacing: .04em; }
+        td.mono { font-family: ui-monospace, SFMono-Regular, monospace; font-size: .82em; color: var(--text-dim); }
         td .username { color: #fff; }
+        .empty { color: var(--text-dim); padding: 14px 0; text-align: center; font-size: .9em; }
+        .status-completed { color: var(--success); }
+        .status-error { color: var(--danger); }
+
+        /* forms */
         .row-form { display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 8px; margin-top: 14px; }
         .row-form input, textarea {
-            background: var(--input-bg); color: var(--text-color);
-            border: 1px solid rgba(255,215,0,0.18); border-radius: 10px;
-            padding: 8px 10px; font-size: 0.9em; font-family: inherit;
+            background: rgba(255,255,255,.03); color: var(--text);
+            border: 1px solid rgba(255,215,0,.15); border-radius: 10px;
+            padding: 9px 12px; font-size: .9em; font-family: inherit;
+            transition: border-color .3s, box-shadow .3s;
         }
         textarea { width: 100%; box-sizing: border-box; min-height: 100px; resize: vertical; font-family: ui-monospace, monospace; }
-        .row-form input:focus, textarea:focus { outline: none; border-color: rgba(255,215,0,0.6); }
+        .row-form input:focus, textarea:focus {
+            outline: none; border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(255,215,0,.08);
+        }
+
+        /* buttons */
         button {
-            background: var(--primary-gradient); color: #111;
+            display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+            background: linear-gradient(135deg, var(--gold-light), var(--gold)); color: #111;
             border: none; border-radius: 10px;
-            padding: 8px 14px; font-weight: 600; font-size: 0.88em; font-family: inherit;
+            padding: 8px 14px; font-weight: 600; font-size: .88em; font-family: inherit;
             cursor: pointer; white-space: nowrap;
+            transition: transform .2s, box-shadow .2s;
         }
-        button.ghost { background: rgba(255,255,255,0.06); color: #fff; }
-        button.danger { background: rgba(255,107,107,0.15); color: var(--danger); }
-        button.icon { padding: 6px 10px; font-size: 0.95em; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .empty { color: var(--text-secondary); padding: 14px 0; text-align: center; font-size: 0.9em; }
-        .status-completed { color: #4ade80; }
-        .status-error { color: var(--danger); }
+        button:hover { transform: translateY(-1px); box-shadow: 0 6px 16px -4px rgba(255,215,0,.3); }
+        button:active { transform: translateY(0); }
+        button:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+        button svg { flex-shrink: 0; }
+
+        button.ghost {
+            background: rgba(255,255,255,.06); color: #fff;
+            border: 1px solid rgba(255,255,255,.08);
+        }
+        button.ghost:hover { background: rgba(255,255,255,.1); box-shadow: none; }
+
+        button.danger {
+            background: rgba(255,107,107,.12); color: var(--danger);
+            border: 1px solid rgba(255,107,107,.15);
+        }
+        button.danger:hover { background: rgba(255,107,107,.2); box-shadow: 0 4px 12px -4px rgba(255,107,107,.25); }
+
+        button.icon { padding: 6px 10px; font-size: .88em; }
+
+        /* layout */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } .row-form { grid-template-columns: 1fr 1fr; } }
-        .add-tokens { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
-        .add-tokens .actions-row { display: flex; gap: 8px; }
-        details summary { cursor: pointer; color: var(--text-secondary); font-size: 0.85em; }
-        details pre {
-            background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px;
-            overflow-x: auto; font-size: 0.78em; max-height: 200px;
+        @media (max-width: 720px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .row-form { grid-template-columns: 1fr 1fr; }
         }
-        .footer-note { color: var(--text-secondary); font-size: 0.78em; padding: 8px 4px 24px; text-align: center; }
+        .add-tokens { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+        .add-tokens .actions-row { display: flex; gap: 8px; align-items: center; }
+
+        /* settings cards */
+        .switch { position: relative; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+        .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+        .switch .track {
+            width: 38px; height: 22px; border-radius: 999px;
+            background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.1);
+            position: relative; transition: background .25s;
+        }
+        .switch .track::after {
+            content: ''; position: absolute; top: 2px; left: 2px;
+            width: 16px; height: 16px; border-radius: 50%;
+            background: #fff; transition: transform .25s;
+        }
+        .switch input:checked + .track { background: linear-gradient(135deg, var(--gold-light), var(--gold)); border-color: transparent; }
+        .switch input:checked + .track::after { transform: translateX(16px); background: #111; }
+        .switch span { font-size: .85em; color: var(--text-dim); }
+
+        .field-grid { display: grid; gap: 10px; margin-top: 12px; }
+        .field-grid .label {
+            font-size: .72em; text-transform: uppercase; letter-spacing: .06em;
+            color: var(--text-dim); margin-bottom: 4px;
+        }
+        .field-grid input, .field-grid select, .field-grid textarea {
+            width: 100%; background: rgba(255,255,255,.03); color: var(--text);
+            border: 1px solid rgba(255,215,0,.15); border-radius: 10px;
+            padding: 9px 12px; font-size: .9em; font-family: inherit;
+            transition: border-color .3s, box-shadow .3s;
+        }
+        .field-grid textarea { min-height: 80px; resize: vertical; }
+        .field-grid input:focus, .field-grid select:focus, .field-grid textarea:focus {
+            outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(255,215,0,.08);
+        }
+        .field-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        @media (max-width: 720px) { .field-row-2 { grid-template-columns: 1fr; } }
+        .save-row { display: flex; justify-content: flex-end; margin-top: 10px; gap: 8px; }
+        /* Quill rich-text editor — dark theme override */
+        .ql-toolbar.ql-snow {
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,215,0,.15);
+            border-bottom: none;
+            border-radius: 10px 10px 0 0;
+            padding: 6px 8px;
+        }
+        .ql-container.ql-snow {
+            background: rgba(255,255,255,.03);
+            border: 1px solid rgba(255,215,0,.15);
+            border-radius: 0 0 10px 10px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: .92em;
+            height: 200px;
+            overflow: hidden;
+        }
+        .ql-editor { min-height: 100%; max-height: 200px; overflow-y: auto; }
+        .ql-editor.ql-blank::before { color: rgba(255,255,255,.35); font-style: normal; }
+        .ql-snow .ql-stroke { stroke: #ddd; }
+        .ql-snow .ql-fill, .ql-snow .ql-stroke.ql-fill { fill: #ddd; }
+        .ql-snow .ql-picker { color: #ddd; }
+        .ql-snow .ql-picker-options {
+            background-color: #1a1a1a;
+            border: 1px solid rgba(255,215,0,.2);
+        }
+        .ql-snow .ql-picker.ql-expanded .ql-picker-label { border-color: rgba(255,215,0,.3); }
+        .ql-snow .ql-tooltip {
+            background: #1a1a1a;
+            border: 1px solid rgba(255,215,0,.25);
+            box-shadow: 0 6px 18px rgba(0,0,0,.5);
+            color: #fff;
+        }
+        .ql-snow .ql-tooltip input[type=text] {
+            background: rgba(255,255,255,.05); color: #fff;
+            border: 1px solid rgba(255,215,0,.2);
+        }
+        .ql-snow.ql-toolbar button:hover .ql-stroke,
+        .ql-snow.ql-toolbar button.ql-active .ql-stroke { stroke: var(--gold); }
+        .ql-snow.ql-toolbar button:hover .ql-fill,
+        .ql-snow.ql-toolbar button.ql-active .ql-fill { fill: var(--gold); }
+        .ql-snow.ql-toolbar button:hover, .ql-snow.ql-toolbar button.ql-active { color: var(--gold); }
+
+        /* Layout picker */
+        .layout-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .layout-card {
+            display: flex !important;
+            flex-direction: column;
+            gap: 8px;
+            padding: 14px 14px 12px;
+            border-radius: 14px;
+            background: rgba(255,255,255,.03) !important;
+            border: 1px solid rgba(255,255,255,.07) !important;
+            color: var(--text) !important;
+            text-align: left;
+            cursor: pointer;
+            transition: transform .25s, border-color .25s, background .25s, box-shadow .25s;
+            box-shadow: none !important;
+            white-space: normal !important;
+            font-family: inherit !important;
+            font-weight: 400 !important;
+            font-size: inherit !important;
+        }
+        .layout-card:hover {
+            transform: translateY(-2px) !important;
+            border-color: rgba(255,215,0,.25) !important;
+            background: rgba(255,215,0,.04) !important;
+        }
+        .layout-card.active {
+            border-color: var(--gold) !important;
+            background: rgba(255,215,0,.08) !important;
+            box-shadow: 0 6px 20px -8px rgba(255,215,0,.4) !important;
+        }
+        .layout-preview {
+            display: flex; flex-direction: column; gap: 4px;
+            width: 100%; height: 90px;
+            padding: 8px;
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.06);
+            border-radius: 9px;
+        }
+        .layout-preview .block {
+            background: linear-gradient(135deg, rgba(255,215,0,.45), rgba(255,215,0,.15));
+            border-radius: 4px;
+            min-height: 8px;
+        }
+        .layout-preview .block.hero {
+            min-height: 28px;
+            background: linear-gradient(135deg, var(--gold-light), var(--gold));
+        }
+        /* stacked: vertical strip */
+        .preview-stacked .block { flex: 1; }
+        /* split: row of two columns */
+        .preview-split { flex-direction: row; }
+        .preview-split .col-left, .preview-split .col-right { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .preview-split .col-left .block.tall { flex: 1; }
+        .preview-split .col-right .block { flex: 1; }
+        /* spotlight: full-width hero + 2-col rows */
+        .preview-spotlight .block.wide { width: 100%; min-height: 24px; }
+        .preview-spotlight .row { display: flex; gap: 4px; flex: 1; }
+        .preview-spotlight .row .block { flex: 1; }
+
+        .layout-name {
+            display: flex; align-items: center; gap: 6px;
+            font-weight: 600; font-size: .92em; color: #fff;
+        }
+        .layout-tag {
+            font-size: .65em; letter-spacing: .04em; text-transform: uppercase;
+            background: rgba(255,215,0,.12); color: var(--gold-light);
+            padding: 2px 7px; border-radius: 999px; font-weight: 500;
+        }
+        .layout-desc { font-size: .76em; color: var(--text-dim); line-height: 1.4; }
+
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .theme-card {
+            display: flex !important;
+            flex-direction: column;
+            gap: 6px;
+            padding: 14px 14px 12px;
+            border-radius: 14px;
+            background: rgba(255,255,255,.03) !important;
+            border: 1px solid rgba(255,255,255,.07) !important;
+            color: var(--text) !important;
+            text-align: left;
+            cursor: pointer;
+            transition: transform .25s, border-color .25s, background .25s, box-shadow .25s;
+            box-shadow: none !important;
+            white-space: normal !important;
+            font-family: inherit !important;
+            font-weight: 400 !important;
+            font-size: inherit !important;
+        }
+        .theme-card:hover {
+            transform: translateY(-2px) !important;
+            border-color: rgba(255,215,0,.25) !important;
+            background: rgba(255,215,0,.04) !important;
+        }
+        .theme-card.active {
+            border-color: var(--gold) !important;
+            background: rgba(255,215,0,.08) !important;
+            box-shadow: 0 6px 20px -8px rgba(255,215,0,.4) !important;
+        }
+        .theme-swatch {
+            width: 100%; height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--c1), var(--c2) 55%, var(--c3));
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 4px 14px -6px rgba(0,0,0,.5);
+        }
+        .theme-name {
+            display: flex; align-items: center; gap: 6px;
+            font-weight: 600; font-size: .95em; color: #fff;
+        }
+        .theme-tag {
+            font-size: .65em; letter-spacing: .04em; text-transform: uppercase;
+            background: rgba(255,215,0,.12); color: var(--gold-light);
+            padding: 2px 7px; border-radius: 999px; font-weight: 500;
+        }
+        .theme-desc { font-size: .78em; color: var(--text-dim); line-height: 1.4; }
+
+        .contacts-block .contact-row { display: grid; grid-template-columns: 1fr 1.2fr 1.5fr auto; gap: 8px; align-items: center; }
+        @media (max-width: 720px) { .contacts-block .contact-row { grid-template-columns: 1fr 1fr; } }
+
+        /* Popup preview rich-text — match the public site style */
+        .popup-rich.swal2-html-container {
+            text-align: left; margin: .25rem auto 0; max-width: 32rem;
+            padding: 1rem 1.2rem; background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08); border-radius: 14px;
+            color: #ddd; font-size: .95rem; line-height: 1.6;
+        }
+        .popup-rich p { margin: .25rem 0; }
+        .popup-rich p:first-child { margin-top: 0; }
+        .popup-rich p:last-child { margin-bottom: 0; }
+        .popup-rich a { color: var(--gold); text-decoration: underline; word-break: break-word; }
+        .popup-rich ul, .popup-rich ol { padding-left: 1.3rem; margin: .3rem 0; }
+        .popup-rich li { margin: .15rem 0; }
+        .popup-rich h1, .popup-rich h2, .popup-rich h3 { color: var(--gold-light); font-weight: 700; margin: .35rem 0 .25rem; line-height: 1.3; }
+        .popup-rich h1 { font-size: 1.2rem; }
+        .popup-rich h2 { font-size: 1.05rem; }
+        .popup-rich h3 { font-size: .95rem; }
+        .popup-rich strong { color: #fff; font-weight: 600; }
+        .popup-rich .ql-align-center { text-align: center; }
+        .popup-rich .ql-align-right { text-align: right; }
+        .popup-rich .ql-align-justify { text-align: justify; }
+
+        .mc-info {
+            background: rgba(255,255,255,.03);
+            border: 1px solid rgba(255,255,255,.06);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: .85em;
+            color: var(--text-dim);
+            margin-top: 12px;
+            display: flex; flex-wrap: wrap; gap: 14px;
+        }
+        .mc-info .label { color: var(--text-dim); font-size: .75em; text-transform: uppercase; letter-spacing: .04em; margin-right: 5px; }
+        .mc-info .val { color: #fff; font-family: ui-monospace, monospace; font-size: .85em; }
+        .mc-info.absent { color: var(--text-dim); }
+        .mc-upload {
+            display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+            margin-top: 12px;
+        }
+        .mc-upload .ghost svg, .mc-upload button svg { flex-shrink: 0; }
+
+        .mc-history {
+            margin-top: 14px;
+            background: rgba(255,255,255,.02);
+            border: 1px solid rgba(255,255,255,.06);
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+        .mc-history-head {
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: .78em; text-transform: uppercase; letter-spacing: .06em;
+            color: var(--text-dim); margin-bottom: 8px;
+        }
+        .mc-history-list {
+            display: flex; flex-direction: column; gap: 6px;
+            max-height: 260px; overflow-y: auto;
+        }
+        .mc-history-item {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            background: rgba(0,0,0,.25);
+            border: 1px solid rgba(255,255,255,.05);
+            border-radius: 8px;
+            font-size: .82em;
+        }
+        .mc-history-item .badge {
+            font-size: .7em; font-weight: 600;
+            padding: 2px 8px; border-radius: 999px;
+            text-transform: uppercase; letter-spacing: .05em;
+        }
+        .mc-history-item .badge.upload {
+            background: rgba(74,222,128,.14); color: var(--success);
+        }
+        .mc-history-item .badge.delete {
+            background: rgba(255,107,107,.14); color: var(--danger);
+        }
+        .mc-history-item .name {
+            color: #fff;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            font-family: ui-monospace, monospace; font-size: .92em;
+        }
+        .mc-history-item .meta {
+            color: var(--text-dim);
+            font-family: ui-monospace, monospace;
+            font-size: .85em;
+            text-align: right;
+            white-space: nowrap;
+        }
+        .mc-history-empty {
+            color: var(--text-dim); font-size: .82em; text-align: center;
+            padding: 14px 4px;
+        }
+
+        details summary { cursor: pointer; color: var(--text-dim); font-size: .85em; transition: color .2s; }
+        details summary:hover { color: var(--gold); }
+        details pre {
+            background: rgba(0,0,0,.4); padding: 10px; border-radius: 8px;
+            overflow-x: auto; font-size: .78em; max-height: 200px;
+        }
+        .footer-note { color: var(--text-dim); font-size: .78em; padding: 8px 4px 24px; text-align: center; }
+
+        /* Tab nav */
+        .tabs {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            background: rgba(16,16,16,.7);
+            border: var(--glass);
+            border-radius: 999px;
+            padding: 6px;
+            margin: 4px 0 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 16px;
+            border-radius: 999px;
+            background: transparent;
+            color: var(--text-dim);
+            font-family: inherit; font-size: .85em; font-weight: 500;
+            border: none; cursor: pointer;
+            transition: color .2s, background .2s, transform .2s;
+            white-space: nowrap;
+        }
+        .tab-btn:hover { color: #fff; background: rgba(255,255,255,.04); }
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--gold-light), var(--gold));
+            color: #111;
+            font-weight: 600;
+        }
+        .tab-btn svg { width: 14px; height: 14px; }
+        .tab-pane { display: none; flex-direction: column; gap: 18px; }
+        .tab-pane.active {
+            display: flex;
+            animation: tabIn .4s cubic-bezier(.22,1,.36,1) both;
+        }
+        @keyframes tabIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
+    <div class="bg-glow">
+        <div class="orb"></div>
+        <div class="orb"></div>
+    </div>
+
     <div class="wrap">
         <header>
-            <h1>⚙️ Admin · Locket Gold</h1>
-            <div class="actions">
-                <a href="/" style="text-decoration:none;"><button class="ghost">← Trang chính</button></a>
-                <form method="POST" action="/admin/logout" style="margin:0;"><button class="ghost" type="submit">Đăng xuất</button></form>
+            <div class="header-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>Admin · Locket Gold</span>
+            </div>
+            <div class="header-actions">
+                <a href="/" style="text-decoration:none;">
+                    <button class="ghost">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+                        Home
+                    </button>
+                </a>
+                <form method="POST" action="/admin/logout" style="margin:0;">
+                    <button class="ghost" type="submit">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        Sign Out
+                    </button>
+                </form>
             </div>
         </header>
 
+        <nav class="tabs" id="adminTabs">
+            <button class="tab-btn" data-tab="dashboard">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                Dashboard
+            </button>
+            <button class="tab-btn" data-tab="accounts">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Locket Activate
+            </button>
+            <button class="tab-btn" data-tab="proxy">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                Proxy
+            </button>
+            <button class="tab-btn" data-tab="notifications">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                Notifications
+            </button>
+            <button class="tab-btn" data-tab="theme">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+                Theme
+            </button>
+        </nav>
+
+        <div class="tab-pane" data-pane="accounts">
+
+        <!-- Accounts -->
         <section class="card">
-            <h2>Tài khoản Locket <span class="pill" id="account-count">…</span></h2>
+            <h2>
+                <span style="display:flex;align-items:center;gap:8px;">
+                    <svg class="section-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Locket Accounts
+                </span>
+                <span class="pill" id="account-count">...</span>
+            </h2>
             <table id="accounts-table">
                 <thead><tr><th>Email</th><th>Slot ID</th><th></th></tr></thead>
                 <tbody></tbody>
             </table>
             <div class="row-form">
                 <input id="acc-email" type="email" placeholder="email@example.com" autocomplete="off">
-                <input id="acc-pw" type="password" placeholder="mật khẩu" autocomplete="new-password">
-                <button class="ghost" id="acc-test">Test</button>
-                <button id="acc-add">Thêm</button>
+                <input id="acc-pw" type="password" placeholder="password" autocomplete="new-password">
+                <button class="ghost" id="acc-test">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    Test
+                </button>
+                <button id="acc-add">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add
+                </button>
             </div>
         </section>
 
+        <!-- Tokens -->
         <section class="card">
-            <h2>Token RevenueCat <span class="pill" id="token-count">…</span></h2>
+            <h2>
+                <span style="display:flex;align-items:center;gap:8px;">
+                    <svg class="section-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    Token RevenueCat
+                </span>
+                <span class="pill" id="token-count">...</span>
+            </h2>
             <table id="tokens-table">
                 <thead><tr><th>#</th><th>app_user_id (template)</th><th>Payload</th><th></th></tr></thead>
                 <tbody></tbody>
             </table>
             <div class="add-tokens">
-                <textarea id="token-raw" placeholder='Dán JSON payload vào đây, ví dụ:&#10;{&#10;  "app_user_id": "...",&#10;  "fetch_token": "...",&#10;  "platform": "ios"&#10;}'></textarea>
+                <textarea id="token-raw" placeholder='Paste JSON payload here, e.g.:&#10;{&#10;  "app_user_id": "...",&#10;  "fetch_token": "...",&#10;  "platform": "ios"&#10;}'></textarea>
                 <div class="actions-row">
-                    <button id="token-add">Thêm payload</button>
-                    <span class="footer-note" style="padding:6px 0; margin-left:auto;">Để trống tokens.json → fallback gist_token_url</span>
+                    <button id="token-add">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add Payload
+                    </button>
+                    <span class="footer-note" style="padding:6px 0; margin-left:auto;">Empty tokens &rarr; fallback to gist_token_url</span>
                 </div>
             </div>
         </section>
 
+        <!-- Mobile Config -->
+        <section class="card">
+            <h2>
+                <span style="display:flex;align-items:center;gap:8px;">
+                    <svg class="section-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                    iOS Mobile Config
+                </span>
+                <span class="pill" id="mc-status">…</span>
+            </h2>
+            <div id="mc-info" class="mc-info">Checking…</div>
+            <div class="mc-upload">
+                <input type="file" id="mc-file" accept=".mobileconfig,application/x-apple-aspen-config" style="display:none;">
+                <button class="ghost" id="mc-pick">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Choose .mobileconfig
+                </button>
+                <span id="mc-filename" class="footer-note" style="padding:0;flex:1;text-align:left;">No file chosen</span>
+                <button id="mc-upload" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    Upload &amp; Replace
+                </button>
+                <a class="ghost" href="/api/mobileconfig" target="_blank" style="text-decoration:none;display:inline-block;">
+                    <button class="ghost" type="button" id="mc-test">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Open
+                    </button>
+                </a>
+                <button class="danger" id="mc-delete" type="button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                    Delete
+                </button>
+            </div>
+            <div class="mc-history">
+                <div class="mc-history-head">
+                    <span>Lịch sử cập nhật gần đây</span>
+                    <button class="ghost" id="mc-history-refresh" type="button" style="padding:4px 10px;font-size:.75em;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        Refresh
+                    </button>
+                </div>
+                <div class="mc-history-list" id="mc-history-list">
+                    <div class="mc-history-empty">Đang tải…</div>
+                </div>
+            </div>
+            <p class="footer-note" style="text-align:left;padding:6px 0 0;">
+                File upload sẽ được phục vụ qua <code>/api/mobileconfig</code> với
+                Content-Type <code>application/x-apple-aspen-config</code> để iOS hiện hộp thoại
+                "Install Profile". Max 5 MB.
+            </p>
+        </section>
+
+        </div><!-- /accounts pane -->
+
+        <div class="tab-pane" data-pane="proxy">
+
+        <!-- Proxies -->
+        <section class="card">
+            <h2>
+                <span style="display:flex;align-items:center;gap:8px;">
+                    <svg class="section-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    Proxy Pool
+                </span>
+                <label class="switch">
+                    <input type="checkbox" id="proxy-master">
+                    <span class="track"></span>
+                    <span id="proxy-master-state">Off</span>
+                </label>
+            </h2>
+            <table id="proxies-table">
+                <thead><tr><th>#</th><th>Proxy</th><th>Status</th><th>Health</th><th></th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <div class="add-tokens">
+                <textarea id="proxy-raw" placeholder="Paste one proxy per line. Accepted formats:&#10;user:pass:host:port&#10;host:port&#10;http://user:pass@host:port"></textarea>
+                <div class="actions-row">
+                    <button id="proxy-add">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add Proxy
+                    </button>
+                    <span class="footer-note" style="padding:6px 0; margin-left:auto;">Master switch off &rarr; all calls go direct.</span>
+                </div>
+            </div>
+        </section>
+
+        </div><!-- /proxy pane -->
+
+        <div class="tab-pane" data-pane="theme">
+
+        <!-- Layout picker -->
+        <section class="card">
+            <h2>
+                <span style="display:flex;align-items:center;gap:8px;">
+                    <svg class="section-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                    Layout
+                </span>
+                <span class="pill" id="layout-current">…</span>
+            </h2>
+            <div class="layout-grid">
+                <button class="layout-card" data-layout="stacked" type="button">
+                    <span class="layout-preview preview-stacked" aria-hidden="true">
+                        <span class="block hero"></span>
+                        <span class="block"></span>
+                        <span class="block"></span>
+                        <span class="block"></span>
+                    </span>
+                    <span class="layout-name">Stacked <span class="layout-tag">Default</span></span>
+                    <span class="layout-desc">Một cột gọn — phù hợp mọi thiết bị.</span>
+                </button>
+                <button class="layout-card" data-layout="split" type="button">
+                    <span class="layout-preview preview-split" aria-hidden="true">
+                        <span class="col-left">
+                            <span class="block hero tall"></span>
+                        </span>
+                        <span class="col-right">
+                            <span class="block"></span>
+                            <span class="block"></span>
+                            <span class="block"></span>
+                        </span>
+                    </span>
+                    <span class="layout-name">Split</span>
+                    <span class="layout-desc">2 cột PC — hero dính trái, nội dung phải.</span>
+                </button>
+                <button class="layout-card" data-layout="spotlight" type="button">
+                    <span class="layout-preview preview-spotlight" aria-hidden="true">
+                        <span class="block hero wide"></span>
+                        <span class="row">
+                            <span class="block"></span>
+                            <span class="block"></span>
+                        </span>
+                        <span class="row">
+                            <span class="block"></span>
+                            <span class="block"></span>
+                        </span>
+                    </span>
+                    <span class="layout-name">Spotlight</span>
+                    <span class="layout-desc">Hero full-width, nội dung tile 2 cột.</span>
+                </button>
+            </div>
+            <p class="footer-note" style="text-align:left;padding:6px 0 0;">Layout chỉ ảnh hưởng <code>/</code>. Trên mobile mọi layout đều rớt về 1 cột.</p>
+        </section>
+
+        <!-- Theme picker -->
+        <section class="card">
+            <h2>
+                <span style="display:flex;align-items:center;gap:8px;">
+                    <svg class="section-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+                    Public Theme
+                </span>
+                <span class="pill" id="theme-current">…</span>
+            </h2>
+            <div class="theme-grid">
+                <button class="theme-card" data-theme="gold" type="button">
+                    <span class="theme-swatch" style="--c1:#FFD700;--c2:#E5A100;--c3:#FFE55C"></span>
+                    <span class="theme-name">Gold <span class="theme-tag">Default</span></span>
+                    <span class="theme-desc">Warm, premium, the classic look.</span>
+                </button>
+                <button class="theme-card" data-theme="aurora" type="button">
+                    <span class="theme-swatch" style="--c1:#7dd3fc;--c2:#a78bfa;--c3:#ec4899"></span>
+                    <span class="theme-name">Aurora</span>
+                    <span class="theme-desc">Cyan/purple, electric reveal.</span>
+                </button>
+                <button class="theme-card" data-theme="sunset" type="button">
+                    <span class="theme-swatch" style="--c1:#fb923c;--c2:#f472b6;--c3:#facc15"></span>
+                    <span class="theme-name">Sunset</span>
+                    <span class="theme-desc">Peach/magenta, pop-in reveal.</span>
+                </button>
+                <button class="theme-card" data-theme="mono" type="button">
+                    <span class="theme-swatch" style="--c1:#ffffff;--c2:#9ca3af;--c3:#4b5563"></span>
+                    <span class="theme-name">Mono</span>
+                    <span class="theme-desc">Cool grayscale, wipe reveal.</span>
+                </button>
+            </div>
+            <p class="footer-note" style="text-align:left;padding:6px 0 0;">Theme applies to the public landing page. Reload <code>/</code> to see changes.</p>
+        </section>
+
+        </div><!-- /theme pane -->
+
+        <div class="tab-pane" data-pane="notifications">
+
+        <!-- Popup notification -->
+        <section class="card">
+            <h2>
+                <span style="display:flex;align-items:center;gap:8px;">
+                    <svg class="section-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Popup Notification
+                </span>
+                <label class="switch">
+                    <input type="checkbox" id="popup-enabled">
+                    <span class="track"></span>
+                    <span id="popup-state">Off</span>
+                </label>
+            </h2>
+            <div class="field-grid">
+                <div class="field-row-2">
+                    <div>
+                        <div class="label">Title</div>
+                        <input id="popup-title" type="text" placeholder="Thông báo">
+                    </div>
+                    <div>
+                        <div class="label">Icon</div>
+                        <select id="popup-icon">
+                            <option value="info">info</option>
+                            <option value="success">success</option>
+                            <option value="warning">warning</option>
+                            <option value="error">error</option>
+                            <option value="question">question</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <div class="label">Message (rich text · bold / link / list / color)</div>
+                    <div id="popup-message-editor"></div>
+                </div>
+                <div class="save-row">
+                    <button class="ghost" id="popup-preview">Preview</button>
+                    <button id="popup-save">Save Popup</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Maintenance mode -->
+        <section class="card">
+            <h2>
+                <span style="display:flex;align-items:center;gap:8px;">
+                    <svg class="section-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                    Maintenance Mode
+                </span>
+                <label class="switch">
+                    <input type="checkbox" id="maint-enabled">
+                    <span class="track"></span>
+                    <span id="maint-state">Off</span>
+                </label>
+            </h2>
+            <div class="field-grid">
+                <div class="field-row-2">
+                    <div>
+                        <div class="label">Title</div>
+                        <input id="maint-title" type="text" placeholder="Bảo Trì Máy Chủ">
+                    </div>
+                    <div>
+                        <div class="label">End Time (local)</div>
+                        <input id="maint-end" type="datetime-local">
+                    </div>
+                </div>
+                <div>
+                    <div class="label">Subtitle / Message</div>
+                    <textarea id="maint-message" placeholder="Hệ thống đang được nâng cấp…"></textarea>
+                </div>
+                <div>
+                    <div class="label">Notice Box</div>
+                    <textarea id="maint-notice" placeholder="Máy chủ đang bảo trì định kỳ…"></textarea>
+                </div>
+                <div class="contacts-block">
+                    <div class="label">Contacts (Founder / Admin)</div>
+                    <div id="maint-contacts" style="display:flex;flex-direction:column;gap:6px;"></div>
+                    <div style="margin-top:6px;display:flex;gap:8px;">
+                        <button class="ghost icon" id="maint-add-contact">+ Add Contact</button>
+                    </div>
+                </div>
+                <label class="switch" style="margin-top:8px;">
+                    <input type="checkbox" id="maint-allow-admin" checked>
+                    <span class="track"></span>
+                    <span>Bypass for logged-in admin (recommended)</span>
+                </label>
+                <div class="save-row">
+                    <button id="maint-save">Save Maintenance</button>
+                </div>
+                <p class="footer-note" style="text-align:left;padding:0;margin-top:6px;">
+                    When enabled, public endpoints return 503 and `/` shows the maintenance page until the End Time elapses or you toggle this off.
+                </p>
+            </div>
+        </section>
+
+        </div><!-- /notifications pane -->
+
+        <div class="tab-pane" data-pane="dashboard">
+
+        <!-- Processing + Queue -->
         <div class="grid-2">
             <section class="card">
-                <h2>Đang xử lý <span class="pill" id="proc-count">0</span></h2>
+                <h2>
+                    <span style="display:flex;align-items:center;gap:8px;">
+                        <svg class="section-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                        Processing
+                    </span>
+                    <span class="pill" id="proc-count">0</span>
+                </h2>
                 <table id="processing-table">
-                    <thead><tr><th>Slot</th><th>Username</th><th>Bắt đầu</th></tr></thead>
+                    <thead><tr><th>Slot</th><th>Username</th><th>Started</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </section>
             <section class="card">
-                <h2>Hàng đợi <span class="pill" id="wait-count">0</span></h2>
+                <h2>
+                    <span style="display:flex;align-items:center;gap:8px;">
+                        <svg class="section-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                        Queue
+                    </span>
+                    <span class="pill" id="wait-count">0</span>
+                </h2>
                 <table id="waiting-table">
-                    <thead><tr><th>#</th><th>Username</th><th>Đã chờ</th></tr></thead>
+                    <thead><tr><th>#</th><th>Username</th><th>Waiting</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </section>
         </div>
 
+        <!-- Recent -->
         <section class="card">
-            <h2>Lịch sử gần đây</h2>
+            <h2>
+                <span style="display:flex;align-items:center;gap:8px;">
+                    <svg class="section-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Recent History
+                </span>
+            </h2>
             <table id="recent-table">
-                <thead><tr><th>Username</th><th>Slot</th><th>Status</th><th>Duration</th><th>Lúc</th><th>Lỗi</th></tr></thead>
+                <thead><tr><th>Username</th><th>Slot</th><th>Status</th><th>Duration</th><th>Time</th><th>Error</th></tr></thead>
                 <tbody></tbody>
             </table>
         </section>
 
-        <p class="footer-note">Queue snapshot tự refresh mỗi 2s · Accounts/Tokens refresh khi có thay đổi.</p>
+        <p class="footer-note">Queue snapshot auto-refreshes every 2s · Accounts/Tokens refresh on change.</p>
+
+        </div><!-- /dashboard pane -->
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
     <script>
         const swalGlass = {
             background: 'rgba(20,20,20,0.92)',
@@ -187,7 +989,7 @@
         function fmtTime(iso) {
             if (!iso) return '—';
             const d = new Date(iso);
-            return d.toLocaleTimeString('vi-VN', { hour12: false });
+            return d.toLocaleTimeString('en-US', { hour12: false });
         }
         function fmtDuration(s) { return s == null ? '—' : `${s.toFixed(1)}s`; }
         function ago(iso) {
@@ -198,6 +1000,8 @@
             return `${Math.floor(s/3600)}h`;
         }
 
+        const svgTrash = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+
         // --- Accounts ---
         async function loadAccounts() {
             try {
@@ -206,7 +1010,7 @@
                 const tbody = $('#accounts-table tbody');
                 tbody.innerHTML = '';
                 if (!accounts.length) {
-                    tbody.innerHTML = '<tr><td colspan="3" class="empty">Chưa có account</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="3" class="empty">No accounts yet</td></tr>';
                     return;
                 }
                 for (const a of accounts) {
@@ -214,7 +1018,7 @@
                     tr.innerHTML = `
                         <td><span class="username">${a.email}</span></td>
                         <td class="mono">${a.id.slice(0,8)}</td>
-                        <td style="text-align:right"><button class="icon danger" data-id="${a.id}">Xoá</button></td>`;
+                        <td style="text-align:right"><button class="icon danger" data-id="${a.id}">${svgTrash} Delete</button></td>`;
                     tbody.appendChild(tr);
                 }
                 tbody.querySelectorAll('button[data-id]').forEach(btn => {
@@ -230,9 +1034,9 @@
                 await api('POST', '/admin/api/accounts', { email, password });
                 $('#acc-email').value = ''; $('#acc-pw').value = '';
                 await loadAccounts();
-                Swal.fire({ ...swalGlass, icon: 'success', title: 'Đã thêm', timer: 1500, showConfirmButton: false });
+                Swal.fire({ ...swalGlass, icon: 'success', title: 'Added', timer: 1500, showConfirmButton: false });
             } catch (e) {
-                Swal.fire({ ...swalGlass, icon: 'error', title: 'Không thêm được', text: e.message });
+                Swal.fire({ ...swalGlass, icon: 'error', title: 'Failed to add', text: e.message });
             }
         }
         async function testAccount() {
@@ -244,20 +1048,20 @@
                 if (r.success) {
                     Swal.fire({ ...swalGlass, icon: 'success', title: 'Login OK', timer: 1500, showConfirmButton: false });
                 } else {
-                    Swal.fire({ ...swalGlass, icon: 'error', title: 'Login thất bại', text: r.error });
+                    Swal.fire({ ...swalGlass, icon: 'error', title: 'Login failed', text: r.error });
                 }
             } catch (e) {
-                Swal.fire({ ...swalGlass, icon: 'error', title: 'Lỗi', text: e.message });
+                Swal.fire({ ...swalGlass, icon: 'error', title: 'Error', text: e.message });
             }
         }
         async function removeAccount(id) {
-            const ok = await Swal.fire({ ...swalGlass, icon: 'warning', title: 'Xoá account?', text: 'Worker đang chạy sẽ dừng sau khi xong job hiện tại.', showCancelButton: true, confirmButtonText: 'Xoá' });
+            const ok = await Swal.fire({ ...swalGlass, icon: 'warning', title: 'Delete account?', text: 'Running worker will stop after finishing its current job.', showCancelButton: true, confirmButtonText: 'Delete' });
             if (!ok.isConfirmed) return;
             try {
                 await api('DELETE', `/admin/api/accounts/${id}`);
                 await loadAccounts();
             } catch (e) {
-                Swal.fire({ ...swalGlass, icon: 'error', title: 'Lỗi', text: e.message });
+                Swal.fire({ ...swalGlass, icon: 'error', title: 'Error', text: e.message });
             }
         }
 
@@ -269,7 +1073,7 @@
                 const tbody = $('#tokens-table tbody');
                 tbody.innerHTML = '';
                 if (!tokens.length) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="empty">tokens.json rỗng — đang dùng gist fallback</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" class="empty">No tokens — using gist fallback</td></tr>';
                     return;
                 }
                 tokens.forEach((p, i) => {
@@ -277,8 +1081,8 @@
                     tr.innerHTML = `
                         <td class="mono">${i}</td>
                         <td class="mono">${(p.app_user_id || '—').toString().slice(0,40)}</td>
-                        <td><details><summary>Xem JSON</summary><pre>${JSON.stringify(p, null, 2)}</pre></details></td>
-                        <td style="text-align:right"><button class="icon danger" data-i="${i}">Xoá</button></td>`;
+                        <td><details><summary>View JSON</summary><pre>${JSON.stringify(p, null, 2)}</pre></details></td>
+                        <td style="text-align:right"><button class="icon danger" data-i="${i}">${svgTrash} Delete</button></td>`;
                     tbody.appendChild(tr);
                 });
                 tbody.querySelectorAll('button[data-i]').forEach(btn => {
@@ -293,19 +1097,19 @@
                 await api('POST', '/admin/api/tokens', { raw });
                 $('#token-raw').value = '';
                 await loadTokens();
-                Swal.fire({ ...swalGlass, icon: 'success', title: 'Đã thêm', timer: 1500, showConfirmButton: false });
+                Swal.fire({ ...swalGlass, icon: 'success', title: 'Added', timer: 1500, showConfirmButton: false });
             } catch (e) {
-                Swal.fire({ ...swalGlass, icon: 'error', title: 'Không hợp lệ', text: e.message });
+                Swal.fire({ ...swalGlass, icon: 'error', title: 'Invalid payload', text: e.message });
             }
         }
         async function removeToken(i) {
-            const ok = await Swal.fire({ ...swalGlass, icon: 'warning', title: 'Xoá payload?', showCancelButton: true, confirmButtonText: 'Xoá' });
+            const ok = await Swal.fire({ ...swalGlass, icon: 'warning', title: 'Delete payload?', showCancelButton: true, confirmButtonText: 'Delete' });
             if (!ok.isConfirmed) return;
             try {
                 await api('DELETE', `/admin/api/tokens/${i}`);
                 await loadTokens();
             } catch (e) {
-                Swal.fire({ ...swalGlass, icon: 'error', title: 'Lỗi', text: e.message });
+                Swal.fire({ ...swalGlass, icon: 'error', title: 'Error', text: e.message });
             }
         }
 
@@ -343,7 +1147,7 @@
 
                 const recentTbody = $('#recent-table tbody');
                 recentTbody.innerHTML = '';
-                if (!data.recent.length) recentTbody.innerHTML = '<tr><td colspan="6" class="empty">Chưa có lịch sử</td></tr>';
+                if (!data.recent.length) recentTbody.innerHTML = '<tr><td colspan="6" class="empty">No history yet</td></tr>';
                 for (const r of data.recent) {
                     const cls = r.status === 'completed' ? 'status-completed' : 'status-error';
                     const email = data.workers[r.slot_id];
@@ -354,22 +1158,494 @@
                             <td class="${cls}">${r.status}</td>
                             <td class="mono">${fmtDuration(r.duration)}</td>
                             <td class="mono">${fmtTime(r.completed_at)}</td>
-                            <td class="mono" style="max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${r.error || ''}">${r.error || ''}</td>
+                            <td class="mono" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.error || ''}">${r.error || ''}</td>
                         </tr>`);
                 }
             } catch (e) { console.error(e); }
         }
+
+        // --- Mobile Config ---
+        function fmtBytes(n) {
+            if (n == null) return '—';
+            if (n < 1024) return `${n} B`;
+            if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+            return `${(n / 1024 / 1024).toFixed(2)} MB`;
+        }
+        function fmtAge(epoch) {
+            if (!epoch) return '—';
+            const s = Date.now() / 1000 - epoch;
+            if (s < 60) return `${Math.floor(s)}s ago`;
+            if (s < 3600) return `${Math.floor(s/60)}m ago`;
+            if (s < 86400) return `${Math.floor(s/3600)}h ago`;
+            return `${Math.floor(s/86400)}d ago`;
+        }
+        async function loadMobileConfig() {
+            try {
+                const data = await api('GET', '/admin/api/mobileconfig');
+                const status = $('#mc-status');
+                const info = $('#mc-info');
+                if (!data.exists) {
+                    status.textContent = 'not set';
+                    status.style.background = 'rgba(255,107,107,.12)';
+                    status.style.color = 'var(--danger)';
+                    info.classList.add('absent');
+                    info.innerHTML = 'No profile uploaded yet. Users see HTTP 404 when downloading.';
+                    return;
+                }
+                status.textContent = 'active';
+                status.style.background = 'rgba(74,222,128,.12)';
+                status.style.color = 'var(--success)';
+                info.classList.remove('absent');
+                info.innerHTML = `
+                    <span><span class="label">Size</span><span class="val">${fmtBytes(data.size)}</span></span>
+                    <span><span class="label">Updated</span><span class="val">${fmtAge(data.modified_at)}</span></span>
+                    <span><span class="label">Type</span><span class="val">${data.signed ? 'signed' : 'plain XML'}</span></span>`;
+            } catch (e) { console.error(e); }
+        }
+        $('#mc-pick').onclick = () => $('#mc-file').click();
+        $('#mc-file').addEventListener('change', (e) => {
+            const f = e.target.files[0];
+            if (!f) {
+                $('#mc-filename').textContent = 'No file chosen';
+                $('#mc-upload').disabled = true;
+                return;
+            }
+            $('#mc-filename').textContent = `${f.name} · ${fmtBytes(f.size)}`;
+            $('#mc-upload').disabled = false;
+        });
+        $('#mc-upload').onclick = async () => {
+            const f = $('#mc-file').files[0];
+            if (!f) return;
+            const btn = $('#mc-upload');
+            btn.disabled = true;
+            const fd = new FormData();
+            fd.append('file', f);
+            try {
+                const res = await fetch('/admin/api/mobileconfig', { method: 'POST', body: fd });
+                const j = await res.json();
+                if (!res.ok || !j.success) throw new Error(j.error || `HTTP ${res.status}`);
+                $('#mc-file').value = '';
+                $('#mc-filename').textContent = 'No file chosen';
+                await loadMobileConfig();
+                await loadMobileConfigHistory();
+                Swal.fire({ ...swalGlass, icon: 'success', title: 'Uploaded', timer: 1300, showConfirmButton: false });
+            } catch (e) {
+                Swal.fire({ ...swalGlass, icon: 'error', title: 'Upload failed', text: e.message });
+            } finally {
+                btn.disabled = false;
+            }
+        };
+        $('#mc-delete').onclick = async () => {
+            const ok = await Swal.fire({ ...swalGlass, icon: 'warning', title: 'Delete profile?', text: 'Users will get 404 when trying to install.', showCancelButton: true, confirmButtonText: 'Delete' });
+            if (!ok.isConfirmed) return;
+            try {
+                await api('DELETE', '/admin/api/mobileconfig');
+                await loadMobileConfig();
+                await loadMobileConfigHistory();
+            } catch (e) {
+                Swal.fire({ ...swalGlass, icon: 'error', title: 'Error', text: e.message });
+            }
+        };
+
+        function escapeHtml(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+        function fmtAbsTime(epoch) {
+            if (!epoch) return '—';
+            const d = new Date(epoch * 1000);
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }
+        async function loadMobileConfigHistory() {
+            const list = $('#mc-history-list');
+            try {
+                const data = await api('GET', '/admin/api/mobileconfig/history');
+                const items = data.items || [];
+                if (!items.length) {
+                    list.innerHTML = '<div class="mc-history-empty">Chưa có thao tác nào.</div>';
+                    return;
+                }
+                list.innerHTML = items.map(it => {
+                    const isUpload = it.action === 'upload';
+                    const badge = isUpload
+                        ? '<span class="badge upload">Upload</span>'
+                        : '<span class="badge delete">Delete</span>';
+                    const name = isUpload
+                        ? escapeHtml(it.filename || 'unnamed.mobileconfig')
+                        : '<span style="color:var(--text-dim);">profile removed</span>';
+                    const sizePart = (isUpload && it.size != null) ? fmtBytes(it.size) : '';
+                    const typePart = isUpload ? (it.signed ? 'signed' : 'plain XML') : '';
+                    const metaBits = [
+                        sizePart,
+                        typePart,
+                        fmtAge(it.created_at),
+                    ].filter(Boolean).join(' · ');
+                    return `<div class="mc-history-item" title="${escapeHtml(fmtAbsTime(it.created_at))}">
+                        ${badge}
+                        <div class="name">${name}</div>
+                        <div class="meta">${escapeHtml(metaBits)}</div>
+                    </div>`;
+                }).join('');
+            } catch (e) {
+                list.innerHTML = `<div class="mc-history-empty">Lỗi tải lịch sử: ${escapeHtml(e.message || e)}</div>`;
+            }
+        }
+        $('#mc-history-refresh').onclick = () => loadMobileConfigHistory();
+
+        // --- Theme ---
+        async function loadTheme() {
+            try {
+                const data = await api('GET', '/admin/api/theme');
+                const cur = data.theme.name;
+                $('#theme-current').textContent = cur;
+                document.querySelectorAll('.theme-card').forEach(c => {
+                    c.classList.toggle('active', c.dataset.theme === cur);
+                });
+            } catch (e) { console.error(e); }
+        }
+        document.querySelectorAll('.theme-card').forEach(card => {
+            card.onclick = async () => {
+                const name = card.dataset.theme;
+                try {
+                    await api('PUT', '/admin/api/theme', { name });
+                    document.querySelectorAll('.theme-card').forEach(c => c.classList.toggle('active', c === card));
+                    $('#theme-current').textContent = name;
+                    Swal.fire({ ...swalGlass, icon: 'success', title: `Theme: ${name}`, timer: 1100, showConfirmButton: false });
+                } catch (e) {
+                    Swal.fire({ ...swalGlass, icon: 'error', title: 'Failed', text: e.message });
+                }
+            };
+        });
+
+        // --- Layout ---
+        async function loadLayout() {
+            try {
+                const data = await api('GET', '/admin/api/layout');
+                const cur = data.layout.name;
+                $('#layout-current').textContent = cur;
+                document.querySelectorAll('.layout-card').forEach(c => {
+                    c.classList.toggle('active', c.dataset.layout === cur);
+                });
+            } catch (e) { console.error(e); }
+        }
+        document.querySelectorAll('.layout-card').forEach(card => {
+            card.onclick = async () => {
+                const name = card.dataset.layout;
+                try {
+                    await api('PUT', '/admin/api/layout', { name });
+                    document.querySelectorAll('.layout-card').forEach(c => c.classList.toggle('active', c === card));
+                    $('#layout-current').textContent = name;
+                    Swal.fire({ ...swalGlass, icon: 'success', title: `Layout: ${name}`, timer: 1100, showConfirmButton: false });
+                } catch (e) {
+                    Swal.fire({ ...swalGlass, icon: 'error', title: 'Failed', text: e.message });
+                }
+            };
+        });
+
+        // --- Proxies ---
+        async function loadProxies() {
+            try {
+                const data = await api('GET', '/admin/api/proxies');
+                $('#proxy-master').checked = !!data.master_enabled;
+                $('#proxy-master-state').textContent = data.master_enabled ? 'On' : 'Off';
+                const tbody = $('#proxies-table tbody');
+                tbody.innerHTML = '';
+                if (!data.items.length) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="empty">No proxies yet</td></tr>';
+                    return;
+                }
+                data.items.forEach(p => {
+                    const ok = p.last_ok_at;
+                    const err = p.last_err;
+                    const healthLabel = err ? `<span style="color:var(--danger)" title="${err}">err</span>`
+                                            : ok ? `<span style="color:var(--success)">ok</span>`
+                                                 : '<span style="color:var(--text-dim)">—</span>';
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="mono">${p.id}</td>
+                        <td class="mono" style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${p.url_redacted}">${p.url_redacted}</td>
+                        <td>
+                            <label class="switch" style="gap:6px;">
+                                <input type="checkbox" data-toggle="${p.id}" ${p.enabled ? 'checked' : ''}>
+                                <span class="track"></span>
+                                <span style="font-size:.78em;">${p.enabled ? 'On' : 'Off'}</span>
+                            </label>
+                        </td>
+                        <td class="mono" style="font-size:.8em;">${healthLabel}</td>
+                        <td style="text-align:right;display:flex;gap:6px;justify-content:flex-end;">
+                            <button class="ghost icon" data-test="${p.id}">Test</button>
+                            <button class="icon danger" data-del="${p.id}">${svgTrash}</button>
+                        </td>`;
+                    tbody.appendChild(tr);
+                });
+                tbody.querySelectorAll('input[data-toggle]').forEach(inp => {
+                    inp.onchange = async () => {
+                        try {
+                            await api('PATCH', `/admin/api/proxies/${inp.dataset.toggle}`, { enabled: inp.checked });
+                            await loadProxies();
+                        } catch (e) {
+                            Swal.fire({ ...swalGlass, icon: 'error', title: 'Error', text: e.message });
+                        }
+                    };
+                });
+                tbody.querySelectorAll('button[data-test]').forEach(btn => {
+                    btn.onclick = async () => {
+                        btn.disabled = true; btn.textContent = '…';
+                        try {
+                            const r = await fetch(`/admin/api/proxies/${btn.dataset.test}/test`, { method: 'POST' });
+                            const j = await r.json();
+                            Swal.fire({
+                                ...swalGlass,
+                                icon: j.success ? 'success' : 'error',
+                                title: j.success ? `OK (HTTP ${j.status})` : 'Failed',
+                                text: j.error || '',
+                                timer: 2000,
+                                showConfirmButton: !j.success,
+                            });
+                            await loadProxies();
+                        } catch (e) {
+                            Swal.fire({ ...swalGlass, icon: 'error', title: 'Error', text: e.message });
+                        } finally {
+                            btn.disabled = false; btn.textContent = 'Test';
+                        }
+                    };
+                });
+                tbody.querySelectorAll('button[data-del]').forEach(btn => {
+                    btn.onclick = async () => {
+                        const ok = await Swal.fire({ ...swalGlass, icon: 'warning', title: 'Delete proxy?', showCancelButton: true, confirmButtonText: 'Delete' });
+                        if (!ok.isConfirmed) return;
+                        try {
+                            await api('DELETE', `/admin/api/proxies/${btn.dataset.del}`);
+                            await loadProxies();
+                        } catch (e) {
+                            Swal.fire({ ...swalGlass, icon: 'error', title: 'Error', text: e.message });
+                        }
+                    };
+                });
+            } catch (e) { console.error(e); }
+        }
+        async function addProxies() {
+            const raw = $('#proxy-raw').value.trim();
+            if (!raw) return;
+            try {
+                const r = await api('POST', '/admin/api/proxies', { raw });
+                $('#proxy-raw').value = '';
+                await loadProxies();
+                Swal.fire({ ...swalGlass, icon: 'success', title: `Added ${r.added}`, timer: 1300, showConfirmButton: false });
+            } catch (e) {
+                Swal.fire({ ...swalGlass, icon: 'error', title: 'Failed', text: e.message });
+            }
+        }
+        $('#proxy-add').onclick = addProxies;
+        $('#proxy-master').addEventListener('change', async (e) => {
+            try {
+                await api('PUT', '/admin/api/proxies/master', { enabled: e.target.checked });
+                $('#proxy-master-state').textContent = e.target.checked ? 'On' : 'Off';
+            } catch (err) {
+                Swal.fire({ ...swalGlass, icon: 'error', title: 'Error', text: err.message });
+                e.target.checked = !e.target.checked;
+            }
+        });
+
+        // --- Popup ---
+        function setText(id, v) { const el = $(id); if (el) el.value = v == null ? '' : v; }
+        function getText(id) { const el = $(id); return el ? el.value : ''; }
+
+        const popupEditor = new Quill('#popup-message-editor', {
+            theme: 'snow',
+            placeholder: 'Nội dung popup — bôi đen để in đậm, in nghiêng, gạch chân, đổi màu, thêm link, danh sách, xuống dòng…',
+            modules: {
+                toolbar: [
+                    [{ header: [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ color: [] }, { background: [] }],
+                    [{ list: 'ordered' }, { list: 'bullet' }],
+                    [{ align: [] }],
+                    ['link'],
+                    ['clean'],
+                ],
+            },
+        });
+
+        function getPopupMessageHtml() {
+            // Quill returns "<p><br></p>" when empty — normalize to ''.
+            const html = popupEditor.root.innerHTML.trim();
+            return html === '<p><br></p>' ? '' : html;
+        }
+        function setPopupMessageHtml(html) {
+            popupEditor.root.innerHTML = html || '';
+        }
+
+        async function loadPopup() {
+            try {
+                const { popup } = await api('GET', '/admin/api/popup');
+                $('#popup-enabled').checked = !!popup.enabled;
+                $('#popup-state').textContent = popup.enabled ? 'On' : 'Off';
+                setText('#popup-title', popup.title);
+                setPopupMessageHtml(popup.message);
+                setText('#popup-icon', popup.icon || 'info');
+            } catch (e) { console.error(e); }
+        }
+        async function savePopup() {
+            try {
+                const body = {
+                    enabled: $('#popup-enabled').checked,
+                    title: getText('#popup-title'),
+                    message: getPopupMessageHtml(),
+                    icon: getText('#popup-icon'),
+                };
+                await api('PUT', '/admin/api/popup', body);
+                $('#popup-state').textContent = body.enabled ? 'On' : 'Off';
+                Swal.fire({ ...swalGlass, icon: 'success', title: 'Saved', timer: 1200, showConfirmButton: false });
+            } catch (e) {
+                Swal.fire({ ...swalGlass, icon: 'error', title: 'Save failed', text: e.message });
+            }
+        }
+        function previewPopup() {
+            Swal.fire({
+                ...swalGlass,
+                icon: getText('#popup-icon') || 'info',
+                title: getText('#popup-title') || 'Notice',
+                html: getPopupMessageHtml() || '',
+                confirmButtonText: 'OK',
+                customClass: { htmlContainer: 'popup-rich' },
+            });
+        }
+        $('#popup-enabled').addEventListener('change', e => {
+            $('#popup-state').textContent = e.target.checked ? 'On' : 'Off';
+        });
+        $('#popup-save').onclick = savePopup;
+        $('#popup-preview').onclick = previewPopup;
+
+        // --- Maintenance ---
+        function isoToLocalInput(iso) {
+            if (!iso) return '';
+            const d = new Date(iso);
+            if (Number.isNaN(d.getTime())) return '';
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+        function localInputToIso(v) {
+            if (!v) return '';
+            const d = new Date(v);
+            if (Number.isNaN(d.getTime())) return '';
+            return d.toISOString();
+        }
+
+        function renderContacts(contacts) {
+            const wrap = $('#maint-contacts');
+            wrap.innerHTML = '';
+            contacts.forEach((c, i) => {
+                const row = document.createElement('div');
+                row.className = 'contact-row';
+                row.innerHTML = `
+                    <input data-k="role" placeholder="Role" value="${c.role || ''}">
+                    <input data-k="name" placeholder="Name" value="${c.name || ''}">
+                    <input data-k="url" placeholder="https://…" value="${c.url || ''}">
+                    <button class="icon danger" data-i="${i}" title="Remove">${svgTrash}</button>`;
+                row.querySelector('button').onclick = () => {
+                    contacts.splice(i, 1); renderContacts(contacts);
+                };
+                row.querySelectorAll('input').forEach(inp => {
+                    inp.oninput = () => { contacts[i][inp.dataset.k] = inp.value; };
+                });
+                wrap.appendChild(row);
+            });
+        }
+
+        let _contacts = [];
+
+        async function loadMaintenance() {
+            try {
+                const { maintenance } = await api('GET', '/admin/api/maintenance');
+                $('#maint-enabled').checked = !!maintenance.enabled;
+                $('#maint-state').textContent = maintenance.enabled ? 'On' : 'Off';
+                setText('#maint-title', maintenance.title);
+                setText('#maint-message', maintenance.message);
+                setText('#maint-notice', maintenance.notice);
+                $('#maint-end').value = isoToLocalInput(maintenance.end_at);
+                $('#maint-allow-admin').checked = maintenance.allow_admin !== false;
+                _contacts = Array.isArray(maintenance.contacts) ? maintenance.contacts.map(c => ({ ...c })) : [];
+                renderContacts(_contacts);
+            } catch (e) { console.error(e); }
+        }
+        async function saveMaintenance() {
+            const enabled = $('#maint-enabled').checked;
+            const endIso = localInputToIso($('#maint-end').value);
+            if (enabled && !endIso) {
+                Swal.fire({ ...swalGlass, icon: 'warning', title: 'End time required', text: 'Pick an End Time before enabling maintenance.' });
+                return;
+            }
+            const body = {
+                enabled,
+                title: getText('#maint-title'),
+                message: getText('#maint-message'),
+                notice: getText('#maint-notice'),
+                end_at: endIso,
+                start_at: enabled ? new Date().toISOString() : '',
+                allow_admin: $('#maint-allow-admin').checked,
+                contacts: _contacts.filter(c => (c.name || '').trim() || (c.url || '').trim()),
+            };
+            try {
+                await api('PUT', '/admin/api/maintenance', body);
+                $('#maint-state').textContent = enabled ? 'On' : 'Off';
+                Swal.fire({ ...swalGlass, icon: 'success', title: 'Saved', timer: 1200, showConfirmButton: false });
+            } catch (e) {
+                Swal.fire({ ...swalGlass, icon: 'error', title: 'Save failed', text: e.message });
+            }
+        }
+        $('#maint-enabled').addEventListener('change', e => {
+            $('#maint-state').textContent = e.target.checked ? 'On' : 'Off';
+        });
+        $('#maint-save').onclick = saveMaintenance;
+        $('#maint-add-contact').onclick = (e) => {
+            e.preventDefault();
+            _contacts.push({ role: 'Founder', name: '', url: '' });
+            renderContacts(_contacts);
+        };
 
         // Wire handlers
         $('#acc-add').onclick = addAccount;
         $('#acc-test').onclick = testAccount;
         $('#token-add').onclick = addToken;
 
+        // --- Tabs ---
+        const TAB_KEY = 'admin:active-tab';
+        function activateTab(name) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.dataset.pane === name));
+            try { localStorage.setItem(TAB_KEY, name); } catch (_) {}
+        }
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.onclick = () => activateTab(btn.dataset.tab);
+        });
+        const initialTab = (() => {
+            try {
+                const saved = localStorage.getItem(TAB_KEY);
+                if (saved && document.querySelector(`.tab-pane[data-pane="${saved}"]`)) return saved;
+            } catch (_) {}
+            return 'dashboard';
+        })();
+        activateTab(initialTab);
+
         // Initial load + polling
         loadAccounts();
         loadTokens();
+        loadProxies();
+        loadTheme();
+        loadLayout();
+        loadMobileConfig();
+        loadMobileConfigHistory();
+        loadPopup();
+        loadMaintenance();
         loadQueue();
         setInterval(loadQueue, 2000);
+        setInterval(loadProxies, 10000);
     </script>
 </body>
 </html>

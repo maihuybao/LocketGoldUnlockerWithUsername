@@ -87,6 +87,32 @@ CREATE TABLE IF NOT EXISTS recent_log (
     completed_at REAL
 );
 CREATE INDEX IF NOT EXISTS idx_recent_log_id ON recent_log(id);
+
+CREATE TABLE IF NOT EXISTS site_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at REAL NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS proxies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    url TEXT NOT NULL UNIQUE,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    added_at REAL NOT NULL,
+    last_ok_at REAL,
+    last_err_at REAL,
+    last_err TEXT
+);
+
+CREATE TABLE IF NOT EXISTS mobileconfig_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    action TEXT NOT NULL CHECK (action IN ('upload','delete')),
+    filename TEXT,
+    size INTEGER,
+    signed INTEGER,
+    created_at REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_mc_history_created ON mobileconfig_history(created_at DESC);
 """
 
 

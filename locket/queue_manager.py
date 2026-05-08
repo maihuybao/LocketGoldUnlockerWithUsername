@@ -14,6 +14,7 @@ they're a piece of business logic the queue uses to decide success/failure.
 """
 
 import json
+import random
 import threading
 import time
 import uuid
@@ -41,6 +42,7 @@ class QueueManager:
     TERMINAL_TTL = 600
     PROCESSING_TIMES_MAX = 20
     RECENT_LOG_MAX = 100
+    RECENT_LOG_TTL = 24 * 3600  # public Recent Activity rolls off after 24h
 
     def __init__(self, rotator):
         db.init()
@@ -91,31 +93,128 @@ class QueueManager:
 
     # ---- API-call helper with 401 retry on a specific slot ----
 
+    _TRANSIENT_MARKERS = (
+        "status code 500", "status code 502", "status code 503", "status code 504",
+        "Internal Server Error", "Bad Gateway", "Service Unavailable",
+        "Gateway Timeout", "ConnectionError", "ConnectTimeout",
+        "ReadTimeout", "Timeout", "RemoteDisconnected", "ProtocolError",
+    )
+    # Aggressive retry — Locket's getUserByUsername hits 502 in clusters,
+    # then recovers within seconds. 8 attempts spread over ~30s gives most
+    # requests a fighting chance to land on a healthy backend node.
+    _TRANSIENT_BACKOFF = (0.3, 0.7, 1.2, 2.0, 3.0, 5.0, 8.0)
+
+    @classmethod
+    def _is_transient(cls, exc):
+        msg = str(exc)
+        return any(m in msg for m in cls._TRANSIENT_MARKERS)
+
     def call_on_slot(self, slot_id, api_fn_name, *args, **kwargs):
-        """Invoke a LocketAPI method on one rotator slot, refreshing that
-        slot's token on 401 and retrying once. Used by both the worker loop
-        and synchronous public endpoints."""
+        """Invoke a LocketAPI method on one rotator slot. Refreshes the slot's
+        token on 401 (single retry) and retries on transient upstream errors
+        (5xx, network blips) with backoff + jitter. After a streak of 502s
+        we proactively refresh the Firebase token — some Locket edge nodes
+        502 on stale id tokens, and a fresh login can shake them loose.
+        Used by both the worker loop and synchronous public endpoints."""
         api = self.rotator.get(slot_id)
-        try:
-            return getattr(api, api_fn_name)(*args, **kwargs)
-        except Exception as e:
-            if "401" in str(e) or "Unauthenticated" in str(e):
-                print(f"401 on slot {slot_id}, refreshing and retrying")
-                new_api = self.rotator.refresh(slot_id)
-                if new_api is None:
-                    raise
-                return getattr(new_api, api_fn_name)(*args, **kwargs)
-            raise
+
+        def invoke(target_api):
+            return getattr(target_api, api_fn_name)(*args, **kwargs)
+
+        last_err = None
+        transient_streak = 0
+        token_refreshed_for_5xx = False
+        for attempt, delay in enumerate((0.0,) + self._TRANSIENT_BACKOFF):
+            if delay:
+                # Add ±25% jitter so concurrent workers don't retry in lockstep.
+                time.sleep(delay * (0.75 + random.random() * 0.5))
+            try:
+                return invoke(api)
+            except Exception as e:
+                last_err = e
+                msg = str(e)
+                if "401" in msg or "Unauthenticated" in msg:
+                    print(f"401 on slot {slot_id}, refreshing and retrying")
+                    new_api = self.rotator.refresh(slot_id)
+                    if new_api is None:
+                        raise
+                    api = new_api
+                    transient_streak = 0
+                    continue
+                if self._is_transient(e):
+                    transient_streak += 1
+                    print(
+                        f"Transient upstream error on slot {slot_id} "
+                        f"(attempt {attempt + 1}/{len(self._TRANSIENT_BACKOFF) + 1}): {e}"
+                    )
+                    # 3 consecutive 5xx → try a fresh token before giving up.
+                    if (
+                        transient_streak >= 3
+                        and not token_refreshed_for_5xx
+                        and ("502" in msg or "503" in msg or "504" in msg
+                             or "Bad Gateway" in msg)
+                    ):
+                        print(
+                            f"5xx streak on slot {slot_id} — forcing token refresh"
+                        )
+                        try:
+                            new_api = self.rotator.refresh(slot_id)
+                            if new_api is not None:
+                                api = new_api
+                                token_refreshed_for_5xx = True
+                        except Exception as refresh_err:
+                            print(f"Token refresh failed: {refresh_err}")
+                    continue
+                raise
+        raise last_err
+
+    # Sync endpoints retry on shorter window so the HTTP request doesn't
+    # hang for 30s. Workers (background) use the full backoff via call_on_slot.
+    _SYNC_BACKOFF = (0.3, 0.8, 1.5, 2.5)
 
     def call_round_robin(self, api_fn_name, *args, **kwargs):
-        """Pick any active slot + 401 retry — for sync endpoints not tied to
-        the worker pool (e.g. /api/get-user-info)."""
+        """Try every account in the pool, each with a freshly-ensured token,
+        retrying transient 5xx with a short backoff. Used by sync endpoints
+        like /api/get-user-info — when one account's token / IP gets 502'd
+        by Locket, another may still go through.
+
+        Order: for each backoff slot, try every slot once before sleeping."""
         if self.rotator is None:
             raise Exception("AccountRotator not initialized")
         ids = self.rotator.list_ids()
         if not ids:
             raise Exception("No accounts configured")
-        return self.call_on_slot(ids[0], api_fn_name, *args, **kwargs)
+
+        last_err = None
+        delays = (0.0,) + self._SYNC_BACKOFF
+        for round_idx, delay in enumerate(delays):
+            if delay:
+                time.sleep(delay * (0.75 + random.random() * 0.5))
+            # Rotate the starting slot each round so we don't always hammer
+            # slot 0 first.
+            offset = round_idx % len(ids)
+            order = ids[offset:] + ids[:offset]
+            for slot_id in order:
+                try:
+                    api = self.rotator.ensure_fresh(slot_id)
+                    if api is None:
+                        continue
+                    return getattr(api, api_fn_name)(*args, **kwargs)
+                except Exception as e:
+                    last_err = e
+                    msg = str(e)
+                    if "401" in msg or "Unauthenticated" in msg:
+                        try:
+                            self.rotator.refresh(slot_id)
+                        except Exception:
+                            pass
+                        continue
+                    if self._is_transient(e):
+                        # 5xx on this slot — try the next one immediately
+                        # (no sleep) before falling through to backoff.
+                        continue
+                    raise
+        raise last_err if last_err else Exception("call_round_robin exhausted")
 
     # ---- public API used by Flask routes ----
 
@@ -343,15 +442,22 @@ class QueueManager:
         if now - self._last_cleanup < self.CLEANUP_INTERVAL:
             return
         self._last_cleanup = now
-        cutoff = time.time() - self.TERMINAL_TTL
+        wall_now = time.time()
         try:
             cur = db.get_conn().execute(
                 "DELETE FROM queue_requests "
                 "WHERE status IN ('completed','error') AND completed_at < ?",
-                (cutoff,),
+                (wall_now - self.TERMINAL_TTL,),
             )
             if cur.rowcount:
                 print(f"GC: removed {cur.rowcount} old terminal rows")
+            # Recent Activity: drop entries older than 24h (public-facing).
+            cur2 = db.get_conn().execute(
+                "DELETE FROM recent_log WHERE completed_at < ?",
+                (wall_now - self.RECENT_LOG_TTL,),
+            )
+            if cur2.rowcount:
+                print(f"GC: removed {cur2.rowcount} recent_log rows older than 24h")
         except Exception as e:
             print(f"GC error: {e}")
 

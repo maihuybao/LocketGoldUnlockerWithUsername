@@ -16,11 +16,12 @@ def is_admin_logged_in():
     return bool(session.get("admin"))
 
 
-def check_password(password):
-    expected = os.getenv("ADMIN_PASSWORD")
-    if not expected:
+def check_credentials(username, password):
+    expected_user = os.getenv("ADMIN_USERNAME")
+    expected_pass = os.getenv("ADMIN_PASSWORD")
+    if not expected_user or not expected_pass:
         return False
-    return password == expected
+    return username == expected_user and password == expected_pass
 
 
 def admin_required(view):

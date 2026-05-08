@@ -40,13 +40,38 @@ class Auth:
             "X-Ios-Bundle-Identifier": "com.locket.Locket"
         }
 
-        response = requests.post(url, headers=headers, json=request_data)
+        from . import proxies
 
-        if response.ok:
-            self.token = response.json().get('idToken')
-            return self.token
-        else:
-            raise Exception('Failed to login')
+        last_err = None
+        # Try via proxy pool, then direct as a final fallback. Each proxy
+        # attempt is a single shot — the LocketAPI layer handles retries.
+        attempts = []
+        for _ in range(3):
+            pid, pdict = proxies.next_proxy()
+            if pid is None:
+                break
+            attempts.append((pid, pdict))
+        attempts.append((None, None))  # direct fallback
+
+        for pid, pdict in attempts:
+            try:
+                response = requests.post(
+                    url, headers=headers, json=request_data,
+                    proxies=pdict, timeout=20,
+                )
+                if response.ok:
+                    if pid is not None:
+                        proxies.mark_ok(pid)
+                    self.token = response.json().get('idToken')
+                    return self.token
+                last_err = f"HTTP {response.status_code}: {response.text[:200]}"
+                if pid is not None:
+                    proxies.mark_err(pid, last_err)
+            except Exception as e:
+                last_err = str(e)
+                if pid is not None:
+                    proxies.mark_err(pid, last_err)
+        raise Exception(f"Failed to login: {last_err}")
 
     def get_token(self):
         if not self.token:

@@ -1,6 +1,24 @@
-from flask import current_app, jsonify, render_template, request
+import os
+from datetime import datetime, timezone
 
+from flask import (
+    current_app, jsonify, render_template, request, send_file, session,
+)
+
+from .. import db, site_settings
 from . import bp
+
+
+def _mobileconfig_path():
+    static_dir = os.path.join(current_app.root_path, "static")
+    return os.path.join(static_dir, "locket.mobileconfig")
+
+
+def _mask_username(name):
+    if not name:
+        return "—"
+    s = str(name)
+    return s[0] + "*" * min(4, max(0, len(s) - 1))
 
 
 def _no_accounts_response():
@@ -10,13 +28,75 @@ def _no_accounts_response():
     }), 503
 
 
+def _maintenance_active():
+    m = site_settings.get_maintenance()
+    if not m.get("enabled"):
+        return None
+    if m.get("allow_admin", True) and session.get("admin"):
+        return None
+    return m
+
+
+def _maintenance_json_response():
+    m = _maintenance_active()
+    if m is None:
+        return None
+    return jsonify({
+        "success": False,
+        "maintenance": True,
+        "msg": m.get("message") or "Hệ thống đang bảo trì.",
+        "end_at": m.get("end_at") or None,
+    }), 503
+
+
 @bp.route("/")
 def index():
-    return render_template("index.html")
+    m = _maintenance_active()
+    if m is not None:
+        return render_template("maintenance.html", settings=m), 503
+    theme = site_settings.get_theme().get("name", "gold")
+    layout = site_settings.get_layout().get("name", "stacked")
+    return render_template("index.html", theme=theme, layout=layout)
+
+
+@bp.route("/api/mobileconfig", methods=["GET"])
+def mobileconfig_download():
+    """Serve the mobileconfig with the exact headers iOS needs to trigger the
+    'Install Profile' system dialog (instead of saving as a regular download).
+
+    - Content-Type: application/x-apple-aspen-config — required by iOS Safari.
+    - Content-Disposition: inline — keeps Safari from offering "Save to Files".
+    - No-cache — admins can re-upload and clients see the new version.
+    """
+    path = _mobileconfig_path()
+    if not os.path.exists(path):
+        return jsonify({"success": False, "msg": "Profile not configured"}), 404
+    resp = send_file(
+        path,
+        mimetype="application/x-apple-aspen-config",
+        as_attachment=False,
+        download_name="locket.mobileconfig",
+    )
+    resp.headers["Content-Disposition"] = 'inline; filename="locket.mobileconfig"'
+    resp.headers["Cache-Control"] = "no-store, max-age=0"
+    return resp
+
+
+@bp.route("/api/site-settings", methods=["GET"])
+def site_settings_public():
+    payload = site_settings.public_view()
+    # Whether the current visitor is actually under maintenance (after admin
+    # bypass). FE uses this to decide whether to redirect to the maintenance
+    # page — `maintenance.enabled` alone would loop admins.
+    payload["maintenance_active"] = _maintenance_active() is not None
+    return jsonify({"success": True, **payload})
 
 
 @bp.route("/api/get-user-info", methods=["POST"])
 def get_user_info():
+    blocked = _maintenance_json_response()
+    if blocked is not None:
+        return blocked
     rotator = current_app.rotator
     qm = current_app.queue_manager
     if rotator is None or rotator.size() == 0:
@@ -57,6 +137,9 @@ def get_user_info():
 @bp.route("/api/restore", methods=["POST"])
 def restore_purchase():
     """Add a request to the queue. Returns client_id for polling."""
+    blocked = _maintenance_json_response()
+    if blocked is not None:
+        return blocked
     rotator = current_app.rotator
     qm = current_app.queue_manager
     if rotator is None or rotator.size() == 0:
@@ -83,6 +166,54 @@ def restore_purchase():
     except Exception as e:
         print(f"Error adding to queue: {e}")
         return jsonify({"success": False, "msg": f"An error occurred: {str(e)}"}), 500
+
+
+@bp.route("/api/recent-history", methods=["GET"])
+def recent_history():
+    """Public-safe recent history. Username is masked (a**** style); slot_id
+    and error details are stripped. Returns up to 30 newest entries."""
+    cutoff = __import__("time").time() - 24 * 3600
+    rows = db.get_conn().execute(
+        "SELECT username, status, duration, completed_at "
+        "FROM recent_log WHERE completed_at >= ? "
+        "ORDER BY id DESC LIMIT 30",
+        (cutoff,),
+    ).fetchall()
+    items = []
+    for r in rows:
+        completed_at = None
+        if r["completed_at"] is not None:
+            completed_at = datetime.fromtimestamp(
+                r["completed_at"], tz=timezone.utc
+            ).isoformat()
+        items.append({
+            "username": _mask_username(r["username"]),
+            "status": r["status"],
+            "duration": r["duration"],
+            "completed_at": completed_at,
+        })
+    return jsonify({"success": True, "items": items})
+
+
+@bp.route("/api/mobileconfig/history", methods=["GET"])
+def mobileconfig_history_public():
+    """Public-safe profile update history. Filenames are stripped (admins only
+    see those); we expose action + size + signed flag + timestamp so users
+    know when the profile was last refreshed."""
+    rows = db.get_conn().execute(
+        "SELECT action, size, signed, created_at "
+        "FROM mobileconfig_history ORDER BY id DESC LIMIT 10"
+    ).fetchall()
+    items = [
+        {
+            "action": r["action"],
+            "size": r["size"],
+            "signed": bool(r["signed"]),
+            "created_at": r["created_at"],
+        }
+        for r in rows
+    ]
+    return jsonify({"success": True, "items": items})
 
 
 @bp.route("/api/queue/global-status", methods=["GET"])

@@ -4,9 +4,50 @@ import time
 import random
 import dotenv
 
+from . import proxies as proxy_pool
 from .tokens import tokens_store
 
 dotenv.load_dotenv()
+
+
+def _post_with_proxy(url, *, headers=None, json_body=None, data=None, timeout=20):
+    """POST with the proxy pool: tries up to 3 different proxies, then direct.
+    Returns the first response we got (any status), so the caller decides
+    success/failure. Raises only if every attempt threw a network error."""
+    attempts = []
+    for _ in range(3):
+        pid, pdict = proxy_pool.next_proxy()
+        if pid is None:
+            break
+        attempts.append((pid, pdict))
+    attempts.append((None, None))  # direct fallback
+
+    last_exc = None
+    for pid, pdict in attempts:
+        try:
+            kw = {"headers": headers, "timeout": timeout, "proxies": pdict}
+            if json_body is not None:
+                kw["json"] = json_body
+            if data is not None:
+                kw["data"] = data
+            resp = requests.post(url, **kw)
+            # Per-proxy health: 5xx counts as a proxy/upstream issue too.
+            if pid is not None:
+                if resp.status_code < 500:
+                    proxy_pool.mark_ok(pid)
+                else:
+                    proxy_pool.mark_err(pid, f"HTTP {resp.status_code}")
+            # Non-5xx → return immediately. 5xx → try next attempt.
+            if resp.status_code < 500 or pid is None:
+                return resp
+        except Exception as e:
+            last_exc = e
+            if pid is not None:
+                proxy_pool.mark_err(pid, str(e)[:200])
+            continue
+    if last_exc is not None:
+        raise last_exc
+    return resp  # final 5xx response after exhausting proxies
 
 
 class LocketAPI:
@@ -39,10 +80,11 @@ class LocketAPI:
             }
         }
 
-        response = requests.post(
+        response = _post_with_proxy(
             "https://api.locketcamera.com/getUserByUsername",
             headers=self.headers,
-            json=request_payload,
+            json_body=request_payload,
+            timeout=20,
         )
         # print(response.json())
         if response.ok:
@@ -87,7 +129,7 @@ class LocketAPI:
             "Connection": "keep-alive",
             "Content-Type": "application/json",
         }
-        response = requests.post(url, headers=headers, data=payload)
+        response = _post_with_proxy(url, headers=headers, data=payload, timeout=30)
         print(response.json())
         if response.ok:
             return response.json()
@@ -178,10 +220,11 @@ class LocketAPI:
             }
         }
 
-        response = requests.post(
+        response = _post_with_proxy(
             "https://api.locketcamera.com/getLatestMomentV2",
             headers=self.headers,
-            json=request_payload,
+            json_body=request_payload,
+            timeout=20,
         )
 
         if response.ok:

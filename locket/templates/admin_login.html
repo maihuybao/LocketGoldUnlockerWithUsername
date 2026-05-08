@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin · Đăng nhập</title>
+    <title>Admin · Sign In</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -62,11 +62,13 @@
 <body>
     <form class="card" method="POST" action="/admin/login">
         <h1>Admin</h1>
-        <p class="sub">Nhập mật khẩu để truy cập bảng điều khiển.</p>
+        <p class="sub">Sign in to access the dashboard.</p>
         {% if error %}<div class="error">{{ error }}</div>{% endif %}
-        <label for="pw">Mật khẩu</label>
-        <input id="pw" name="password" type="password" autofocus required>
-        <button type="submit">Đăng nhập</button>
+        <label for="un">Username</label>
+        <input id="un" name="username" type="text" autocomplete="username" autofocus required>
+        <label for="pw">Password</label>
+        <input id="pw" name="password" type="password" autocomplete="current-password" required>
+        <button type="submit">Sign In</button>
     </form>
 </body>
 </html>
